@@ -1,0 +1,442 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              Int         @id @default(autoincrement())
+  email           String      @unique
+  password        String
+  client          Client?
+}
+
+model Client {
+  id              Int         @id @default(autoincrement())
+  nombre          String
+  apellido        String
+  direccion       String
+  available       Boolean     @default(true)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  fechaNacimiento String?
+  sexo            String?
+  telefono        String?
+  
+  userType        UserType    @default(PACIENTE)
+  rol             Rol         @default(CLIENT)
+
+  userId          Int         @unique
+  user            User        @relation(fields: [userId], references: [id])
+
+  @@index([available])
+}
+
+enum Rol {
+  ADMIN
+  CLIENT
+}
+
+enum UserType {
+  PROVEEDOR
+  PACIENTE
+}
+
+enum Estados {
+  EN_CARRITO
+  EN_PROCESO
+  EN_ESPERA_PAGO
+  COMPRADO
+  CANCELADO
+  PAGO_RECHAZADO
+}
+
+enum EstadoPagos {
+  EN_PROCESO
+  PAGO_CANCELADO
+  PAGO_RECHAZADO
+  PAGADO
+}
+
+model Pedido {
+  id              Int             @id @default(autoincrement())
+
+  fechaPedido     DateTime?        @default(now())
+  usuarioId       Int
+  totalItems      Int
+  totalAmount     Float
+
+  estado          Estados         @default(EN_CARRITO)
+
+  DetallesPedidos DetallePedido[]
+  EstadoPedido    HistorialEstados[]
+
+  Pago            Pago?
+
+  createdAt       DateTime        @default(now())
+  UpdatedAt       DateTime        @updatedAt
+  available       Boolean         @default(true)
+}
+
+model HistorialEstados {
+  id                      Int           @id @default(autoincrement())
+
+  estado                  Estados
+
+  Pedido                  Pedido       @relation(fields: [pedidoId], references: [id])
+  pedidoId                Int
+
+  fechaModificacion       DateTime      @default(now())
+  available               Boolean       @default(true)
+}
+
+model DetallePedido {
+  id            Int           @id @default(autoincrement())
+
+  cantidad      Int
+  precio        Float
+
+  productoId    Int
+  pedido        Pedido?       @relation(fields: [pedidoId], references: [id])
+  pedidoId      Int?
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  available     Boolean       @default(true)
+}
+
+model Pago {
+
+  id            Int           @id @default(autoincrement())
+
+  monto         Float
+  fechaPago     DateTime?
+  metodoPago    String
+
+  estado        EstadoPagos   @default(EN_PROCESO)
+
+  usuario       Int
+  
+  pedido        Pedido        @relation(fields: [pedidoId], references: [id])
+  pedidoId      Int           @unique
+
+  historial     HistorialEstadosPago[]
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  available     Boolean       @default(true)
+}
+
+model HistorialEstadosPago {
+  id                      Int           @id @default(autoincrement())
+
+  estado                  EstadoPagos
+
+  Pago                    Pago          @relation(fields: [pagoId], references: [id])
+  pagoId                  Int
+
+  fechaModificacion       DateTime      @default(now())
+  available               Boolean       @default(true)
+}
+
+model Product {
+  id     Int    @id @default(autoincrement())
+  nombre String
+  precio Float
+  marca  String @default("Sin marca")
+
+  stock     Int
+  available Boolean @default(true)
+  //relacion con categoria
+  //categoria Categoria
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  categorias ProductoCategoria[]
+
+  // Relación con TipoProducto o subcateogria
+  tipoProducto   TipoProducto? @relation(fields: [tipoProductoId], references: [id])
+  tipoProductoId Int?
+
+  //Relacion con descuento
+  descuento     DescuentoProducto[]
+  //Relacion con favorito
+  Favorito      Favorito[]
+  // Relación 1:1 con Descripcion
+  descripcion   Descripcion?        @relation(fields: [descripcionId], references: [id])
+  descripcionId Int                 @unique
+  // Relación 1:1 con Tipo de uso
+  tiposDeUso    TipoUso             @relation(fields: [tiposUsoId], references: [id], onDelete: Cascade)
+  tiposUsoId    Int                 @unique
+  //Relacion con comentario
+  comentario    Comentario[]
+
+  //Relacion con imagen
+  imagen      Imagen[]
+  //relacion con receta
+  Receta      Receta[]
+  
+  
+  proveedorId Int?
+  proveedor Proveedores? @relation(fields: [proveedorId], references: [id])
+
+  //relacion con solicitudPresupesto
+  solicitudes    SolicitudPresupuesto[] 
+  presupuesto    Presupuesto?
+
+  @@index([available])
+}
+
+model Categoria {
+  id              Int     @id @default(autoincrement())
+  nombreCategoria String
+  available       Boolean @default(true)
+
+  productos ProductoCategoria[]
+
+  tipoProductos TipoProducto[] // Relación 1:N con Subcategorías
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProductoCategoria {
+  producto  Product @relation(fields: [productId], references: [id])
+  productId Int
+
+  categoria   Categoria @relation(fields: [categoriaId], references: [id])
+  categoriaId Int
+
+  @@id([productId, categoriaId])
+}
+
+//Modelo tipo producto o subcategoria
+model TipoProducto {
+  id         Int     @id @default(autoincrement())
+  nombreTipo String
+  available  Boolean @default(true)
+
+  //relacion con producto   
+  productos Product[]
+
+  //relacion con categoria
+  categoria   Categoria @relation(fields: [categoriaId], references: [id])
+  categoriaId Int       @default(1)
+
+  //autorelacion
+  tiposRelacionados TipoProducto[] @relation("TiposProductoAutoRelation") // Relación 1:N con otras TipoProducto
+  tipoPadre         TipoProducto?  @relation("TiposProductoAutoRelation", fields: [tipoPadreId], references: [id]) // TipoProducto padre
+  tipoPadreId       Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DescuentoProducto {
+  id              Int      @id @default(autoincrement())
+  available       Boolean  @default(true)
+  precioDescuento Float
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  //relacion con producto
+  producto   Product @relation(fields: [productoId], references: [id])
+  productoId Int
+}
+
+model Favorito {
+  id        Int      @id @default(autoincrement())
+  available Boolean  @default(true)
+  fecha     DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  //relación con User
+  userId Int
+
+  //relación con Product
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@unique([userId, productId]) //un solo favorito
+}
+
+model Descripcion {
+  id        Int      @id @default(autoincrement())
+  available Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  descripcion     String
+  caracteristicas String[]
+
+  // Relación inversa con Product
+  product Product?
+}
+
+model Comentario {
+  id        Int      @id @default(autoincrement())
+  available Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  comentario       String @db.VarChar(256) //solo 256 caracteres
+  tituloComentario String @db.VarChar(20) //solo 20 caracteres
+  rating           Int
+
+  //relación con User
+  userId Int
+
+  //relación con Product
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@unique([userId, productId]) //un solo coment para cada usuario con producto
+}
+
+model TipoUso {
+  id        Int      @id @default(autoincrement())
+  available Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  descripcion String
+  tiposDeUso  String[]
+
+  // Relación inversa con Product
+  product Product?
+}
+
+model Imagen {
+  id          Int     @id @default(autoincrement())
+  available   Boolean @default(true)
+  tipoImagen  String
+  descripcion String
+  urlImagen   String
+  productoId  Int
+  producto    Product @relation(fields: [productoId], references: [id])
+}
+
+model Proveedores {
+  id        Int       @id @default(autoincrement())
+  available Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  nombre    String
+  email     String    @unique
+  telefono  String    @unique
+  Product   Product[]
+  presupuesto Presupuesto?
+}
+
+model Receta {
+  id          Int      @id @default(autoincrement())
+  available   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  descripcion String
+  userId      Int
+  productoId  Int
+  producto    Product  @relation(fields: [productoId], references: [id])
+  imagen      String
+}
+
+enum EstadoPresupuesto {
+  CREADO
+  ACEPTADO
+  CANCELADO
+  RECHAZADO
+  FINALIZADO
+}
+
+model Presupuesto{
+  id                    Int      @id @default(autoincrement())
+  available             Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  descripcion           String
+  monto                 Float
+  cantidad              Int
+
+  estado                EstadoPresupuesto @default(CREADO)
+  historialPresupuesto  HistorialEstadoPresupuesto[]
+
+  descargaPresupuesto   descargaPresupuesto?       @relation(fields: [descargaPresupuestoId], references: [id])
+  descargaPresupuestoId Int?           @unique
+
+  proveedor             Proveedores    @relation(fields: [proveedorId], references: [id])
+  proveedorId           Int            @unique
+
+  producto              Product        @relation(fields: [productoId], references: [id])
+  productoId            Int            @unique
+
+  solicitudPresupuesto   SolicitudPresupuesto @relation(fields: [solicitudPresupuestoId], references: [id])
+  solicitudPresupuestoId Int           @unique
+ }
+
+model HistorialEstadoPresupuesto{
+  id Int @id @default(autoincrement())
+  estado EstadoPresupuesto
+
+  presupuesto   Presupuesto  @relation(fields: [presupuestoId], references: [id])
+  presupuestoId  Int
+
+  fechaModificacion DateTime @default(now())
+  available Boolean
+}
+
+model descargaPresupuesto{
+  id                    Int      @id @default(autoincrement())
+  available             Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  fechaDescarga         DateTime
+  
+  idPago                Int
+
+  presupuesto           Presupuesto?
+}
+
+enum EstadoSolicitud {
+  CREADA
+  ACEPTADA
+  CANCELADA
+  RECHAZADA
+  FINALIZADA
+  //CADUCADA
+}
+
+model SolicitudPresupuesto {
+  id               Int      @id @default(autoincrement())
+  available        Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  descripcion     String
+  cantidad        Int
+  producto        Product @relation(fields: [productId], references: [id])
+  productId       Int
+  estado EstadoSolicitud @default(CREADA)
+  estadoSolicitud HistorialEstadoSolicitud[] 
+  userId          Int
+  presupuestos    Presupuesto[]
+}
+
+model HistorialEstadoSolicitud{
+  id Int @id @default(autoincrement())
+  estado                    EstadoSolicitud
+  solicitud                 SolicitudPresupuesto  @relation(fields: [solicitudPresupuestoId], references: [id])
+  solicitudPresupuestoId    Int
+  fechaModificacion         DateTime @default(now())
+  available                 Boolean
+}

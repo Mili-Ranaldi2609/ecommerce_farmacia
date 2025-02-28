@@ -1,0 +1,71 @@
+import { Controller, Get, Post, Body, Param, Query, Inject, Redirect, Patch, ParseIntPipe, Delete, UseGuards } from '@nestjs/common';
+import { estadoPagoDto, PagoDto, PagoPaginationDto } from './dto';
+import { PagoStatus } from './enum/estadoPago.enum';
+import { AuthGuard } from '../auth/guards/auth.guard';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { PagoService } from './pago.service';
+
+@Controller('pago')
+@ApiTags('Pagos')
+export class PagoController {
+  constructor(@Inject() private readonly pagoService: PagoService ) {}
+
+  @UseGuards(AuthGuard)
+  @Post()
+  @ApiBearerAuth('bearerAuth')
+  create(@Body() createPagoDto: PagoDto) {
+    return this.pagoService.create(createPagoDto);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get()
+  @ApiBearerAuth('bearerAuth')
+  findAll(@Body() pagoPaginationDto: PagoPaginationDto) {
+    return this.pagoService.findAll(pagoPaginationDto);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get(':id')
+  @ApiBearerAuth('bearerAuth')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.pagoService.findOne(id);
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete(':id')
+  @ApiBearerAuth('bearerAuth')
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.pagoService.remove(id);
+  }
+
+  @UseGuards(AuthGuard)
+  @Patch()
+  @ApiBearerAuth('bearerAuth')
+  @Redirect('https://google.com.ar/', 301)
+  changeEstadoPago(@Body() changeEstadoPago: estadoPagoDto) {
+    return this.changeEstadoPago(changeEstadoPago);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('mp/:estado')
+  @ApiBearerAuth('bearerAuth')
+  @Redirect('https://google.com.ar/', 301)
+  changeEstadoPagoGet(@Param('estado') estado: string, @Query('id', ParseIntPipe) id: number) {
+    if (estado === 'success') {
+      const paraEnviar: estadoPagoDto = { id: id, estado: PagoStatus.PAGADO };
+      return this.changeEstadoPago(paraEnviar);
+    } else if (estado === 'failure') {
+      const paraEnviar: estadoPagoDto = { id: id, estado: PagoStatus.PAGO_RECHAZADO };
+      return this.changeEstadoPago(paraEnviar);
+    } else {
+      return 'Error';
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('history/:id')
+  @ApiBearerAuth('bearerAuth')
+  getAllEstadosPago(@Param('id', ParseIntPipe) id: number) {
+    return this.pagoService.getAllEstadosPago(id);
+  }
+}
