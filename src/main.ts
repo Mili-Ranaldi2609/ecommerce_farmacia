@@ -7,7 +7,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const logger = new Logger('Full Shop Monolito')
   const app = await NestFactory.create(AppModule);
-  
+
   app.setGlobalPrefix('api', {
     exclude: [{
       path: '',

@@ -14,6 +14,10 @@ export class CategoriaService extends PrismaClient implements OnModuleInit{
     this.logger.log('Databse connected')
   }
 
+  constructor() {
+    super();
+  }
+
 
   //crear categoria
   create(createCategoriaDto: CreateCategoriaDto) {
