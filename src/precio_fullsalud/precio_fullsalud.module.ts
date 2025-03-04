@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
 import { PrecioFullsaludController } from './precio_fullsalud.controller';
+import { PrecioFullSaludService } from './precio-full-salud.service';
+import { AuthModule } from 'src/auth/auth.module';
 
 
 @Module({
   controllers: [PrecioFullsaludController],
-  providers: [],
-  imports: []
+  providers: [PrecioFullSaludService],
+  imports: [AuthModule]
 })
 export class PrecioFullsaludModule {}

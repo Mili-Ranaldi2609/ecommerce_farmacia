@@ -6,13 +6,13 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { firstValueFrom } from 'rxjs';
-import { NATS_SERVICE } from '../../config';
+import { AuthService } from '../auth.service';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
 
   constructor(
+    @Inject() private readonly authService: AuthService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -24,9 +24,11 @@ export class AuthGuard implements CanActivate {
     }
     try {
 
-      const { user, token:newToken } = await firstValueFrom(
-        this.client.send('auth.verify.user', token)
-      );
+      const result = await this.authService.verifyToken(token);
+      if (!result) {
+        throw new UnauthorizedException();
+      }
+      const { user, token: newToken } = result;
 
       request['user'] = user;
 

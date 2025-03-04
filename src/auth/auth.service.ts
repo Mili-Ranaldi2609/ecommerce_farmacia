@@ -41,7 +41,6 @@ export class AuthService extends PrismaClient implements OnModuleInit {
   async registerUser(registerUserDto: RegisterUserDto) {
     const { email, nombre, password } = registerUserDto;
 
-    try {
       const user = await this.user.findUnique({
         where: {
           email: email,
@@ -49,7 +48,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
       });
 
       if (user) {
-        
+        throw new HttpException('User already exists', 400);
       }
 
       const userCreate = await this.user.create({
@@ -81,9 +80,6 @@ export class AuthService extends PrismaClient implements OnModuleInit {
         client: ClientCreate,
         token: await this.signJWT(rest),
       };
-    } catch (error) {
-      
-    }
   }
 
   async loginUser(loginUserDto: LoginUserDto) {
@@ -117,7 +113,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
 
   async findAll() {
     try {
-      return await this.client.findMany({where: {available: true}});
+      return await this.client.findMany({where: {available: true}, include: {user: true}});
     } catch (error) {
       throw new HttpException(error.message, 400);
     }
@@ -130,6 +126,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
           id: id,
           available: true,
         },
+        include: { user: true },
       });
     } catch (error) {
       throw new HttpException(error.message, 400);
