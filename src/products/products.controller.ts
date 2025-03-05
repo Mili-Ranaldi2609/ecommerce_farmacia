@@ -28,7 +28,9 @@ export class ProductsController {
     return this.productService.create(createProductDto);
   }
 
+  @UseGuards(AuthGuard)
   @Get()
+  @ApiBearerAuth('bearerAuth')
   findAllProduct( @Query() paginationDto: PaginationDto){
     return this.productService.findAll(paginationDto);
   }
