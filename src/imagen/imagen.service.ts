@@ -21,7 +21,7 @@ export class ImagenService extends PrismaClient implements OnModuleInit {
     this.logger.log('Database connected');
   }
   constructor(
-    private readonly favoritoService: FavoritosService,
+    //private readonly favoritoService: FavoritosService,
     private readonly productsService: ProductsService,
   ) {
     super();
@@ -49,6 +49,9 @@ export class ImagenService extends PrismaClient implements OnModuleInit {
 
   async findAllImgByProduct(findImagenDto: FindImagenDto) {
     try {
+      if (findImagenDto.productoId === undefined) {
+        throw new BadRequestException('Producto ID is required');
+      }
       await this.productsService.exists(findImagenDto.productoId);
       const imagenes = await this.imagen.findMany({
         where: { productoId: findImagenDto.productoId, available: true },
@@ -63,6 +66,9 @@ export class ImagenService extends PrismaClient implements OnModuleInit {
 
   async findOne(findImagenDto: FindImagenDto) {
     try {
+      if (findImagenDto.productoId === undefined) {
+        throw new BadRequestException('Producto ID is required');
+      }
       await this.productsService.exists(findImagenDto.productoId);
       const imagen = await this.imagen.findUnique({
         where: { id: findImagenDto.idImg, available: true },
