@@ -1,12 +1,12 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
-import * as basicAuth from 'express-basic-auth';
+import basicAuth from 'express-basic-auth';
 import { envs } from './config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
-  const logger = new Logger('Full Shop Monolito')
+  const logger = new Logger('Full Shop Monolito');
   const app = await NestFactory.create(AppModule);
 
   app.setGlobalPrefix('api', {
@@ -19,10 +19,10 @@ async function bootstrap() {
   app.use(
     [envs.swaggerPath, `${envs.swaggerPath}-json`],
     basicAuth({
-      challenge: true,
       users: {
         admin: envs.swaggerPassword
-      }
+      },
+      challenge: true,
     })
   );
 
@@ -34,16 +34,16 @@ async function bootstrap() {
   });
 
   const config = new DocumentBuilder()
-  .setTitle('API Full Shop Documentation')
-  .setDescription('[ Base URL:  ]')
-  .setVersion('1.0')
-  .addSecurity('bearerAuth', {
-    type: 'apiKey',
-    name: 'Authorization',
-    in: 'header',
-    description: 'Enter your Bearer token in the format: Bearer <token>'
-  })
-  .build();
+    .setTitle('API Full Shop Documentation')
+    .setDescription('[ Base URL:  ]')
+    .setVersion('1.0')
+    .addSecurity('bearerAuth', {
+      type: 'apiKey',
+      name: 'Authorization',
+      in: 'header',
+      description: 'Enter your Bearer token in the format: Bearer <token>'
+    })
+    .build();
 
   const document = SwaggerModule.createDocument(app, config);
 
