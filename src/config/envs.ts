@@ -7,6 +7,10 @@ interface EnvVars{
     JWT_SECRET: string;
     SWAGGER_PATH: string;
     SWAGGER_PASSWORD: string;
+    PASSWORD_GOOGLE_GENERIC: string;
+    GOOGLE_CLIENT_ID: string;
+    GOOGLE_CLIENT_SECRET: string;
+    GOOGLE_CALLBACK_URL: string;
 }
 
 const envsSchema = joi.object({
@@ -15,6 +19,10 @@ const envsSchema = joi.object({
     JWT_SECRET: joi.string().required(),
     SWAGGER_PATH: joi.string().required(),
     SWAGGER_PASSWORD: joi.string().required(),
+    PASSWORD_GOOGLE_GENERIC: joi.string().required(),
+    GOOGLE_CLIENT_ID: joi.string().required(),
+    GOOGLE_CLIENT_SECRET: joi.string().required(),
+    GOOGLE_CALLBACK_URL: joi.string().required(),
 })
 .unknown(true);
 
@@ -33,4 +41,8 @@ export const envs = {
     jwtSecret: envVars.JWT_SECRET,
     swaggerPath: envVars.SWAGGER_PATH,
     swaggerPassword: envVars.SWAGGER_PASSWORD,
+    passwordGoogleGeneric: envVars.PASSWORD_GOOGLE_GENERIC,
+    googleClientId: envVars.GOOGLE_CLIENT_ID,
+    googleClientSecret: envVars.GOOGLE_CLIENT_SECRET,
+    googleCallbackUrl: envVars.GOOGLE_CALLBACK_URL,
 }

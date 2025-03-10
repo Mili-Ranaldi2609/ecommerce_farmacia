@@ -1,6 +1,6 @@
-import { HttpException, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { HttpException, Injectable, Logger, OnModuleInit, Req } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Rol, UserType } from '@prisma/client';
 import { LoginUserDto, RegisterUserDto, UpdateClientUser } from './dto';
 import { JwtService } from '@nestjs/jwt';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
@@ -180,6 +180,62 @@ export class AuthService extends PrismaClient implements OnModuleInit {
       };
     } catch (error) {
       throw new HttpException(error.message, 400);  
+    }
+  }
+
+  async googleSignIn(req) {
+    if (!req.user) {
+      throw new HttpException('No user from Google', 400);
+    }
+
+    const { email, firstName, lastName, picture, birthDate, sex, phoneNumber, address } = req.user;
+    console.log(picture);
+
+    const passwordH = envs.passwordGoogleGeneric;
+    const hash = bcrypt.hashSync(passwordH, 10);
+
+    const user = await this.user.findUnique({
+      where: { email},
+    });
+
+    
+
+    if (!user) {
+      const userC = await this.user.create({
+        data: {
+          email,
+          password: bcrypt.hashSync(passwordH, 10),
+        },
+      });
+
+      const clientX = await this.client.create({
+        data: {
+          nombre: firstName,
+          apellido: lastName,
+          available: true,
+          direccion: address,
+          fechaNacimiento: birthDate,
+          sexo: sex,
+          telefono: phoneNumber,
+          // userType: UserType.PACIENTE,
+          // rol: Rol.CLIENT,
+          userId: userC.id,
+        },
+      });
+
+      const { password: __, ...rest } = userC;
+
+    return {
+      user: rest,
+      token: await this.signJWT(rest),
+    };
+    } else if(user) {
+      const { password: __, ...rest } = user;
+
+      return {
+        user: rest,
+        token: await this.signJWT(rest),
+      };
     }
   }
 }
