@@ -189,7 +189,6 @@ export class AuthService extends PrismaClient implements OnModuleInit {
     }
 
     const { email, firstName, lastName, picture, birthDate, sex, phoneNumber, address } = req.user;
-    console.log(picture);
 
     const passwordH = envs.passwordGoogleGeneric;
     const hash = bcrypt.hashSync(passwordH, 10);
