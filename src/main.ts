@@ -68,6 +68,11 @@ async function bootstrap() {
     })
   );
 
+  // Health check endpoint
+  app.use('/', (req, res) => {
+    res.send('Health Check OK');
+  });
+
   await app.listen(envs.port);
 
   logger.log(`Full Shop Monolito running on port ${envs.port}`);

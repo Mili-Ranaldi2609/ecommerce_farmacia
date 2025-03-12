@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { PedidoController } from './pedido.controller';
 import { PedidoService } from './pedido.service';
-import { ProductsService } from 'src/products/products.service';
-import { AuthModule } from 'src/auth/auth.module';
+import { ProductsService } from '../products/products.service';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   controllers: [PedidoController],

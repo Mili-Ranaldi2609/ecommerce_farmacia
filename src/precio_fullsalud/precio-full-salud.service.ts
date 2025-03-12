@@ -2,7 +2,7 @@ import { HttpException, HttpStatus, Injectable, Logger, NotFoundException, OnMod
 import { CreatePrecioFullSaludDto } from './dto/create-precio-full-salud.dto';
 import { UpdatePrecioFullSaludDto } from './dto/update-precio-full-salud.dto';
 import { PrismaClient } from '@prisma/client';
-import { PaginationDto } from 'src/common';
+import { PaginationDto } from '../common';
 
 @Injectable()
 export class PrecioFullSaludService extends PrismaClient implements OnModuleInit {
