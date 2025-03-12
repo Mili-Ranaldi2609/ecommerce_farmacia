@@ -21,7 +21,6 @@ export class CategoriaService extends PrismaClient implements OnModuleInit{
 
   //crear categoria
   create(createCategoriaDto: CreateCategoriaDto) {
-    console.log('servicio create categoria recibida: ', createCategoriaDto)
     return this.categoria.create({
       data: createCategoriaDto
     })
@@ -39,7 +38,6 @@ export class CategoriaService extends PrismaClient implements OnModuleInit{
     const categoria = await this.categoria.findFirst({
       where:{id, available: true}
     })
-    console.log('servicio categoria get one: ', categoria )
 
     
     if(!categoria){
@@ -54,7 +52,6 @@ export class CategoriaService extends PrismaClient implements OnModuleInit{
     const categoria = await this.categoria.findFirst({
       where: {id}
     });
-    console.log('findOne: ', categoria)
 
     if(!categoria){
       throw new NotFoundException('Categoria you want was not found');

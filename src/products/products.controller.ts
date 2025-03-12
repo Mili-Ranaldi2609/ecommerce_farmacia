@@ -97,7 +97,7 @@ export class ProductsController {
   // @Get('searchProductsQuery')
   // async getProductByQuery(@Query() query: SearchProductDto){
   //   try {
-  //     console.log('query: ', query)
+  //      ('query: ', query)
   //     const products = await firstValueFrom(
   //     this.productsClient.send({ cmd: 'search_product_query' }, { query } )
   //     );

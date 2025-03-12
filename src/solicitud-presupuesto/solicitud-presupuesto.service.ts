@@ -340,12 +340,10 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
       : null;
 
       if (!historialActual) {
-        console.log('No hay historial actual');
       }
 
   
       if (historialActual) {
-        console.log("solicitud hitorial acualizado:", historialActual)
         // Paso 3: Finalizar el historial actual
         const historialActualizado = await this.historialEstadoSolicitud.update({
           where: { id: historialActual.id },
@@ -354,7 +352,6 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
             fechaModificacion: new Date(),
           },
         });
-        console.log("historial actualizado: ", historialActualizado)
       }
   
       // Paso 4: Crear un nuevo historial con el nuevo estado
@@ -368,7 +365,6 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
           available: true, // Marcar como activo
         },
       });
-      console.log("nuevo historial creado:", nuevoHistorial)
   
      // Paso 5: Actualizar el estado de la solicitud
      const solPrepUpdated = await this.solicitudPresupuesto.update({
@@ -378,7 +374,6 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
           updatedAt: new Date(), // Actualizar la fecha de modificación
         },
       });
-      console.log("solicitud actualizada:", solPrepUpdated)
   
       return { message: 'Estado de la solicitud y el historial actualizados correctamente' };
     } catch (error) {

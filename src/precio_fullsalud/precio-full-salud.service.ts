@@ -15,8 +15,7 @@ export class PrecioFullSaludService extends PrismaClient implements OnModuleInit
   }
 
   async create(createPrecioFullSaludDto: CreatePrecioFullSaludDto) {
-    console.log('create precio descuento: ', createPrecioFullSaludDto)
-  
+    
     //buscar decuento habilitado
     const existingAvailablePrice = await this.descuentoProducto.findFirst({
       where: {
@@ -61,11 +60,9 @@ export class PrecioFullSaludService extends PrismaClient implements OnModuleInit
   }
 
   async exists(id: number) {
-    console.log('servicio exists tipo producto with id: ', id)
     const descuentoProducto = await this.descuentoProducto.findFirst({
       where: { id }
     })
-    console.log('servicion exists tipo producto: ', descuentoProducto)
 
     if (!descuentoProducto) {
       throw new HttpException('Descuento Producto not found', HttpStatus.NOT_FOUND)
@@ -75,7 +72,6 @@ export class PrecioFullSaludService extends PrismaClient implements OnModuleInit
 
   async update(id: number, updatePrecioFullSaludDto: UpdatePrecioFullSaludDto) {
     await this.exists(id)
-    console.log('update precio Full salud id : ',id, updatePrecioFullSaludDto )
     const updated = await this.descuentoProducto.update({
       where: { id },
       data: {

@@ -1,6 +1,6 @@
-import { HttpException, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { HttpException, Injectable, Logger, OnModuleInit, Req } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Rol, UserType } from '@prisma/client';
 import { LoginUserDto, RegisterUserDto, UpdateClientUser } from './dto';
 import { JwtService } from '@nestjs/jwt';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
@@ -34,7 +34,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
         token: await this.signJWT(user),
       };
     } catch (error) {
-      console.log(error);
+       (error);
     }
   }
 
@@ -87,7 +87,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
 
     try {
       const user = await this.user.findUnique({
-        where: { email },
+        where: { email , googleBool: false},
       });
 
       if (!user) {
@@ -180,6 +180,75 @@ export class AuthService extends PrismaClient implements OnModuleInit {
       };
     } catch (error) {
       throw new HttpException(error.message, 400);  
+    }
+  }
+
+  async googleSignIn(req) {
+    if (!req.user) {
+      throw new HttpException('No user from Google', 400);
+    }
+
+    const { email, firstName, lastName, picture, birthDate, sex, phoneNumber, address } = req.user;
+
+
+    const user = await this.user.findUnique({
+      where: { email, googleBool: true },
+    });
+
+    const userB = await this.user.findUnique({
+      where: { email, googleBool: false },
+    });
+
+    if(userB) {
+      throw new HttpException('User already exists', 400);
+    }
+
+    if (!user) {
+      const userC = await this.user.create({
+        data: {
+          email,
+          password: "null",
+          googleBool: true,
+        },
+      });
+
+      const clientX = await this.client.create({
+        data: {
+          nombre: firstName,
+          apellido: lastName,
+          available: true,
+          direccion: address,
+          fechaNacimiento: birthDate,
+          sexo: sex,
+          telefono: phoneNumber,
+          // userType: UserType.PACIENTE,
+          // rol: Rol.CLIENT,
+          userId: userC.id,
+        },
+      });
+
+      const userF = await this.user.findUnique({
+        where: { email, googleBool: true },
+        include: { client: true },
+      });
+
+      if (!userF) {
+        throw new HttpException('User not found', 404);
+      }
+
+      const { password: __, ...rest } = userF;
+
+    return {
+      user: rest,
+      token: await this.signJWT(rest),
+    };
+    } else if(user) {
+      const { password: __, googleBool, ...rest } = user;
+
+      return {
+        user: rest,
+        token: await this.signJWT(rest),
+      };
     }
   }
 }

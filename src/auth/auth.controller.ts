@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, Inject, Param, ParseIntPipe, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { LoginUserDto, RegisterUserDto } from './dto';
 import { AuthGuard } from './guards/auth.guard';
+import { AuthGuard as GAuthGuard } from '@nestjs/passport';
 import { Token, User } from './decorators';
 import { CurrentUser } from './interfaces/current-user.interface';
 import { UpdateClientUser } from './dto/update-client-user.dto';
@@ -8,9 +9,19 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 
 @Controller('auth')
-@ApiTags('Auth')
+@ApiTags('auth')
 export class AuthController {
   constructor(@Inject() private readonly authService: AuthService) {}
+
+  @Get('google/signin')
+  @UseGuards(GAuthGuard('google'))
+  async googleSignIn(@Req() req) {}
+
+  @Get('google/signin/callback')
+  @UseGuards(GAuthGuard('google'))
+  async googleSignInCallback(@Req() req) {
+    return this.authService.googleSignIn(req);
+  }
 
   @Post('register')
   registerUser(@Body() registerUserDto: RegisterUserDto) {
