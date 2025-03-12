@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ProveedoresController } from './proveedores.controller';
 import { ProveedoresService } from './proveedores.service';
-import { AuthModule } from 'src/auth/auth.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   controllers: [ProveedoresController],
