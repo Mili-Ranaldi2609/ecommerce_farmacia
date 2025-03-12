@@ -86,7 +86,6 @@ export class ImagenService extends PrismaClient implements OnModuleInit {
 
   async remove(removeImagenDto: RemoveImagenDto) {
     try {
-      console.log('removeImagenDto: ', removeImagenDto);
       const imagen = await this.findOne({ idImg: removeImagenDto.idImagen });
       if (!imagen) {
         throw new BadRequestException('La imagen no existe');

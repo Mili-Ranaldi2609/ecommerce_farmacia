@@ -1186,7 +1186,7 @@ export class ProductsService extends PrismaClient implements OnModuleInit {
     });
 
     if (products.length !== ids.length) {
-      console.log('hola longitudes no iguales');
+       ('hola longitudes no iguales');
       throw new NotFoundException('Some products were not found');
     }
 
