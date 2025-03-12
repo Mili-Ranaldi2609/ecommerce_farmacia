@@ -189,7 +189,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
     }
 
     const { email, firstName, lastName, picture, birthDate, sex, phoneNumber, address } = req.user;
-     (picture);
+
 
     const user = await this.user.findUnique({
       where: { email, googleBool: true },
