@@ -255,11 +255,10 @@ async cambiarEstadoPresupuesto(estadoDto: EstadoPresupuestoDto){
       ) : null;
 
       if (!historialActual) {
-        console.log('No hay historial actual');
+         ('No hay historial actual');
       }
 
       if(historialActual){
-        console.log("solicitud hitorial acualizado:", historialActual)
         const historialActualizado = await this.historialEstadoPresupuesto.update({
           where:{id: historialActual.id},
           data:{
@@ -267,7 +266,6 @@ async cambiarEstadoPresupuesto(estadoDto: EstadoPresupuestoDto){
             fechaModificacion: new Date(),
           }
         })
-        console.log("historial actualizado: ", historialActualizado)
       }
 
       const nuevoHistorial = await this.historialEstadoPresupuesto.create({
@@ -286,10 +284,8 @@ async cambiarEstadoPresupuesto(estadoDto: EstadoPresupuestoDto){
           where: { id },
           data:{estado: estado}
         })
-        console.log('estado presupuesto actualizado', presupuestoActualizadoEstado)
       }
 
-      console.log("nuevo historial creado:", nuevoHistorial)
 
     return { message: 'Estado de la presupuesto y el historial actualizados correctamente' };
     

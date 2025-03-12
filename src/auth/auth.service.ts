@@ -34,7 +34,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
         token: await this.signJWT(user),
       };
     } catch (error) {
-      console.log(error);
+       (error);
     }
   }
 
@@ -87,7 +87,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
 
     try {
       const user = await this.user.findUnique({
-        where: { email },
+        where: { email , googleBool: false},
       });
 
       if (!user) {
@@ -190,20 +190,25 @@ export class AuthService extends PrismaClient implements OnModuleInit {
 
     const { email, firstName, lastName, picture, birthDate, sex, phoneNumber, address } = req.user;
 
-    const passwordH = envs.passwordGoogleGeneric;
-    const hash = bcrypt.hashSync(passwordH, 10);
 
     const user = await this.user.findUnique({
-      where: { email},
+      where: { email, googleBool: true },
     });
 
-    
+    const userB = await this.user.findUnique({
+      where: { email, googleBool: false },
+    });
+
+    if(userB) {
+      throw new HttpException('User already exists', 400);
+    }
 
     if (!user) {
       const userC = await this.user.create({
         data: {
           email,
-          password: bcrypt.hashSync(passwordH, 10),
+          password: "null",
+          googleBool: true,
         },
       });
 
@@ -222,14 +227,23 @@ export class AuthService extends PrismaClient implements OnModuleInit {
         },
       });
 
-      const { password: __, ...rest } = userC;
+      const userF = await this.user.findUnique({
+        where: { email, googleBool: true },
+        include: { client: true },
+      });
+
+      if (!userF) {
+        throw new HttpException('User not found', 404);
+      }
+
+      const { password: __, ...rest } = userF;
 
     return {
       user: rest,
       token: await this.signJWT(rest),
     };
     } else if(user) {
-      const { password: __, ...rest } = user;
+      const { password: __, googleBool, ...rest } = user;
 
       return {
         user: rest,

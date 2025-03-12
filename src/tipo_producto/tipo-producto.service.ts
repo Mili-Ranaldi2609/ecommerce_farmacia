@@ -15,7 +15,6 @@ export class TipoProductoService extends PrismaClient implements OnModuleInit{
 
 
   create(createTipoProductoDto: CreateTipoProductoDto) {
-    console.log('servicio create tipo producto: ', createTipoProductoDto)
     return this.tipoProducto.create({
       data: createTipoProductoDto
     })
@@ -36,12 +35,10 @@ export class TipoProductoService extends PrismaClient implements OnModuleInit{
         },
       },
     });
-    console.log('tipo productos encontrados: ', tipoProductos)
     return tipoProductos
   }
 
   async findOne(id: number) {
-    console.log('servicio find one tipo producto with id: ', id)
     const tipoProducto = await this.tipoProducto.findFirst({
       where:{
         id:id , available: true
@@ -58,7 +55,6 @@ export class TipoProductoService extends PrismaClient implements OnModuleInit{
       },
     },
   })
-    console.log('servicion find one tipo producto: ', tipoProducto) 
 
     if(!tipoProducto){
       throw new HttpException(`Tipo producto with id ${id} was not found`, HttpStatus.NOT_FOUND)
@@ -67,13 +63,11 @@ export class TipoProductoService extends PrismaClient implements OnModuleInit{
   }
 
   async exists(id: number) {
-    console.log('servicio exists tipo producto with id: ', id)
     const tipoProducto = await this.tipoProducto.findFirst({
       where:{
         id:id
       }
     })
-    console.log('servicion exists tipo producto: ', tipoProducto) 
 
     if(!tipoProducto){
       throw new HttpException(`Tipo producto with id ${id} was not found`, HttpStatus.NOT_FOUND)
