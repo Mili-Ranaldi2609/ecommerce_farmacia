@@ -7,7 +7,7 @@ import { envs } from '../../config';
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     constructor() {
         super({
-            clientID: "447819308589-ba3abbo25ghb0hd2kcnclspkj7gedjpj.apps.googleusercontent.com",
+            clientID: envs.googleClientId,
             clientSecret: envs.googleClientSecret,
             callbackURL: envs.googleCallbackUrl,
             scope: ['email', 'profile',
