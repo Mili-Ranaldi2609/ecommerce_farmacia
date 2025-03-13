@@ -78,10 +78,10 @@ model Pedido {
 
   estado          Estados         @default(EN_CARRITO)
 
-  DetallesPedidos DetallePedido[]
-  EstadoPedido    HistorialEstados[]
+  detallesPedidos DetallePedido[]
+  estadoPedido    HistorialEstados[]
 
-  Pago            Pago?
+  pago            Pago?
 
   createdAt       DateTime        @default(now())
   UpdatedAt       DateTime        @updatedAt
@@ -93,7 +93,7 @@ model HistorialEstados {
 
   estado                  Estados
 
-  Pedido                  Pedido       @relation(fields: [pedidoId], references: [id])
+  pedido                  Pedido       @relation(fields: [pedidoId], references: [id])
   pedidoId                Int
 
   fechaModificacion       DateTime      @default(now())
@@ -142,7 +142,7 @@ model HistorialEstadosPago {
 
   estado                  EstadoPagos
 
-  Pago                    Pago          @relation(fields: [pagoId], references: [id])
+  pago                    Pago          @relation(fields: [pagoId], references: [id])
   pagoId                  Int
 
   fechaModificacion       DateTime      @default(now())
@@ -172,7 +172,7 @@ model Product {
   //Relacion con descuento
   descuento     DescuentoProducto[]
   //Relacion con favorito
-  Favorito      Favorito[]
+  favorito      Favorito[]
   // Relación 1:1 con Descripcion
   descripcion   Descripcion?        @relation(fields: [descripcionId], references: [id])
   descripcionId Int                 @unique
@@ -185,7 +185,7 @@ model Product {
   //Relacion con imagen
   imagen      Imagen[]
   //relacion con receta
-  Receta      Receta[]
+  receta      Receta[]
   
   
   proveedorId Int?
@@ -335,7 +335,7 @@ model Proveedores {
   nombre    String
   email     String    @unique
   telefono  String    @unique
-  Product   Product[]
+  product   Product[]
   presupuesto Presupuesto?
 }
 
