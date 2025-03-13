@@ -64,8 +64,10 @@ export class ImagenController {
     return 0;
   }
 
+  @UseGuards(AuthGuard)
   @Post('upload')
   @UseInterceptors(FileInterceptor('image'))
+  @ApiBearerAuth('bearerAuth')
   async uploadImage(@UploadedFile() file: Express.Multer.File): Promise<{ url: string }> {
     const url = await this.imagenService.uploadImage(file);
     return { url };
