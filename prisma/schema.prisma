@@ -32,7 +32,8 @@ model Client {
   fechaNacimiento String?
   sexo            String?
   telefono        String?
-  
+  urlImagen       String?
+
   userType        UserType    @default(PACIENTE)
   rol             Rol         @default(CLIENT)
 

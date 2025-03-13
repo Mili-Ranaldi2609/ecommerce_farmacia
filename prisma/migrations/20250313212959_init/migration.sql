@@ -38,6 +38,7 @@ CREATE TABLE "Client" (
     "fechaNacimiento" TEXT,
     "sexo" TEXT,
     "telefono" TEXT,
+    "urlImagen" TEXT,
     "userType" "UserType" NOT NULL DEFAULT 'PACIENTE',
     "rol" "Rol" NOT NULL DEFAULT 'CLIENT',
     "userId" INTEGER NOT NULL,
