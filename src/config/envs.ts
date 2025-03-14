@@ -11,6 +11,7 @@ interface EnvVars{
     GOOGLE_CLIENT_ID: string;
     GOOGLE_CLIENT_SECRET: string;
     GOOGLE_CALLBACK_URL: string;
+    BLOB_READ_WRITE_TOKEN: string;
 }
 
 const envsSchema = joi.object({
@@ -23,6 +24,7 @@ const envsSchema = joi.object({
     GOOGLE_CLIENT_ID: joi.string().required(),
     GOOGLE_CLIENT_SECRET: joi.string().required(),
     GOOGLE_CALLBACK_URL: joi.string().required(),
+    BLOB_READ_WRITE_TOKEN: joi.string().required(),
 })
 .unknown(true);
 
@@ -45,4 +47,5 @@ export const envs = {
     googleClientId: envVars.GOOGLE_CLIENT_ID,
     googleClientSecret: envVars.GOOGLE_CLIENT_SECRET,
     googleCallbackUrl: envVars.GOOGLE_CALLBACK_URL,
+    blobReadWriteToken: envVars.BLOB_READ_WRITE_TOKEN,
 }

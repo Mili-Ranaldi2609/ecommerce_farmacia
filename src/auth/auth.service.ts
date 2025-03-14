@@ -70,6 +70,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
           userType: registerUserDto.userType,
           rol: registerUserDto.rol,
           userId: userCreate.id,
+          urlImagen: registerUserDto.urlImagen,
         },
       });
 
@@ -221,6 +222,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
           fechaNacimiento: birthDate,
           sexo: sex,
           telefono: phoneNumber,
+          urlImagen: picture,
           // userType: UserType.PACIENTE,
           // rol: Rol.CLIENT,
           userId: userC.id,

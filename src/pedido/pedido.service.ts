@@ -51,7 +51,7 @@ export class PedidoService extends PrismaClient implements OnModuleInit{
           totalAmount: totalAmount,
           totalItems: totalItems,
           usuarioId: id,
-          DetallesPedidos: {
+          detallesPedidos: {
             createMany: {
               data: createPedidoDto.detalles.map((detallePedido) => ({
                 precio: productos.find( producto => producto.id === detallePedido.productoId).precio,
@@ -62,7 +62,7 @@ export class PedidoService extends PrismaClient implements OnModuleInit{
           },
         },
         include: {
-          DetallesPedidos: {
+          detallesPedidos: {
             select: {
               cantidad: true,
               precio: true,
@@ -82,7 +82,7 @@ export class PedidoService extends PrismaClient implements OnModuleInit{
 
       return {...pedido,
         usuarioId: usuario,
-        DetallesPedidos: pedido.DetallesPedidos.map((detalles) => ({
+        detallesPedidos: pedido.detallesPedidos.map((detalles) => ({
           ...detalles,
           nombre: productos.find((producto) => producto.id === detalles.productoId).nombre
         }))
@@ -124,7 +124,7 @@ export class PedidoService extends PrismaClient implements OnModuleInit{
     
     const pedido = await this.pedido.findUnique({
       where: {id: id, available: true},
-      include: {DetallesPedidos: {
+      include: {detallesPedidos: {
         select: {
           precio: true,
           cantidad: true,
@@ -137,7 +137,7 @@ export class PedidoService extends PrismaClient implements OnModuleInit{
       throw new HttpException('Pedido not found', HttpStatus.NOT_FOUND);
     }
 
-    const ids = pedido.DetallesPedidos.map((detail) => detail.productoId);
+    const ids = pedido.detallesPedidos.map((detail) => detail.productoId);
     const productos: any[] = await this.productService.validateProducts(ids);
 
     if(!pedido) {
@@ -145,7 +145,7 @@ export class PedidoService extends PrismaClient implements OnModuleInit{
     }
 
     return {...pedido,
-      DetallesPedidos: pedido.DetallesPedidos.map((detallePedidos) => ({
+      detallesPedidos: pedido.detallesPedidos.map((detallePedidos) => ({
         ...detallePedidos,
         nombre: productos.find((producto) => producto.id === detallePedidos.productoId).nombre
       }))

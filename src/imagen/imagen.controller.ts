@@ -7,10 +7,10 @@ import {
   Param,
   Delete,
   Logger,
-  Query,
-  ParseIntPipe,
   UseGuards,
   Inject,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { CreateImagenDto } from './dto/create-imagen.dto';
 import { UpdateImagenDto } from './dto/update-imagen.dto';
@@ -18,6 +18,7 @@ import { RemoveImagenDto } from './dto/remove-imagen.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ImagenService } from './imagen.service';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('imagen')
 @ApiTags('imagenes')
@@ -46,7 +47,7 @@ export class ImagenController {
     @Param('idImagen') idImagen: number,
     @Body() removeImagenDto: RemoveImagenDto,
   ) {
-    
+    return this.imagenService.remove(removeImagenDto);
   }
 
   @UseGuards(AuthGuard)
@@ -61,5 +62,14 @@ export class ImagenController {
   @ApiBearerAuth('bearerAuth')
   update(@Param('id') id: string, @Body() updateImagenDto: UpdateImagenDto) {
     return 0;
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('upload')
+  @UseInterceptors(FileInterceptor('image'))
+  @ApiBearerAuth('bearerAuth')
+  async uploadImage(@UploadedFile() file: Express.Multer.File): Promise<{ url: string }> {
+    const url = await this.imagenService.uploadImage(file);
+    return { url };
   }
 }
