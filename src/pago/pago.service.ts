@@ -37,7 +37,7 @@ export class PagoService extends PrismaClient implements OnModuleInit{
 
             const pedido: any = await this.pedido.findFirst({
                 where: {id: pedidoId, available: true},
-                include: {DetallesPedidos: {
+                include: {detallesPedidos: {
                     select: {
                         precio: true,
                         cantidad: true,
@@ -80,7 +80,7 @@ export class PagoService extends PrismaClient implements OnModuleInit{
 
             const pedido2: any = await this.pedido.findFirst({
                 where: {id: pedidoId, available: true},
-                include: {DetallesPedidos: {
+                include: {detallesPedidos: {
                     select: {
                         precio: true,
                         cantidad: true,
@@ -133,7 +133,7 @@ export class PagoService extends PrismaClient implements OnModuleInit{
         const pago = await this.pago.findFirst({
             where: {id: id, available: true},
             include: {pedido: {
-                include: {DetallesPedidos: {
+                include: {detallesPedidos: {
                     select: {
                         precio: true,
                         cantidad: true,
@@ -226,7 +226,7 @@ export class PagoService extends PrismaClient implements OnModuleInit{
 
         const pedidoX: any = await this.pedido.findFirst({
             where: {id: pagoNuevo.pedidoId, available: true},
-            include: {DetallesPedidos: {
+            include: {detallesPedidos: {
                 select: {
                     precio: true,
                     cantidad: true,

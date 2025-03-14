@@ -38,4 +38,7 @@ export class ClientUser {
 
     @IsNumber()
     userId: number;
+
+    @IsString()
+    urlImagen: string;
 }

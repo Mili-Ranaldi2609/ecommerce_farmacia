@@ -10,7 +10,8 @@ import { PrismaClient } from '@prisma/client';
 import { ProductsService } from '../products/products.service';
 import { RemoveImagenDto } from './dto/remove-imagen.dto';
 import { FindImagenDto } from './dto/find-imagen.dto';
-import { FavoritosService } from '../favorito/favoritos.service';
+import 'multer';
+import { put } from '@vercel/blob';
 
 @Injectable()
 export class ImagenService extends PrismaClient implements OnModuleInit {
@@ -103,6 +104,35 @@ export class ImagenService extends PrismaClient implements OnModuleInit {
     } catch (error) {
       this.logger.error('Error en remove imagen:', error);
       throw error;
+    }
+  }
+
+  async uploadImage(file: Express.Multer.File): Promise<string> {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    // Validar el tipo de archivo
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new BadRequestException('Invalid file type. Only JPEG, PNG, GIF, and WEBP are allowed');
+    }
+
+    // Validar el tamaño del archivo
+    const maxFileSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxFileSize) {
+      throw new BadRequestException('File size exceeds the maximum allowed size of 5MB');
+    }
+
+    try {
+      const blob = await put(file.originalname, file.buffer, {
+        access: 'public',
+        token: process.env.BLOB_READ_WRITE_TOKEN,
+      });
+
+      return blob.url;
+    } catch (error) {
+      throw new BadRequestException('Failed to upload image');
     }
   }
 }

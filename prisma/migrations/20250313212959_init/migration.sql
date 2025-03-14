@@ -21,6 +21,7 @@ CREATE TABLE "User" (
     "id" SERIAL NOT NULL,
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
+    "googleBool" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
@@ -37,6 +38,7 @@ CREATE TABLE "Client" (
     "fechaNacimiento" TEXT,
     "sexo" TEXT,
     "telefono" TEXT,
+    "urlImagen" TEXT,
     "userType" "UserType" NOT NULL DEFAULT 'PACIENTE',
     "rol" "Rol" NOT NULL DEFAULT 'CLIENT',
     "userId" INTEGER NOT NULL,
