@@ -15,7 +15,7 @@ import { CreateComentarioDto } from './dto/create-comentario.dto';
 import { PaginationDto } from '../common';
 import { FindByRating } from './dto/find-rating.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
 import { ComentarioService } from './comentario.service';
 
 @Controller('comentario')
@@ -26,6 +26,22 @@ export class ComentarioController {
   @UseGuards(AuthGuard)
   @Post()
   @ApiBearerAuth('bearerAuth')
+  @ApiBody({
+    description: 'Create a new comment',
+    type: CreateComentarioDto,
+    examples: {
+      example1: {
+        summary: 'Example request',
+        value: {
+          comentario: 'This is a great product!',
+          rating: 5,
+          tituloComentario: 'Amazing!',
+          productId: 1,
+          userId: 1,
+        },
+      },
+    },
+  })
   create(@Body() createComentarioDto: CreateComentarioDto) {
     return this.comentarioService.create(createComentarioDto);
   }
@@ -37,7 +53,11 @@ export class ComentarioController {
     @Param('id') id: number,
     @Query() paginationDto: PaginationDto,
   ) {
-    return this.comentarioService.findAllByUser({userId: id, page: paginationDto.page, limit: paginationDto.limit});
+    return this.comentarioService.findAllByUser({
+      userId: id,
+      page: paginationDto.page,
+      limit: paginationDto.limit,
+    });
   }
 
   @UseGuards(AuthGuard)
@@ -47,13 +67,31 @@ export class ComentarioController {
     @Param('id') id: number,
     @Query() paginationDto: PaginationDto,
   ) {
-    return this.comentarioService.findAllComentProduct({productId: id, page: paginationDto.page, limit: paginationDto.limit});
+    return this.comentarioService.findAllComentProduct({
+      productId: id,
+      page: paginationDto.page,
+      limit: paginationDto.limit,
+    });
   }
 
-  //Y este metodo?
   @UseGuards(AuthGuard)
   @Get('Rating/:rating')
   @ApiBearerAuth('bearerAuth')
+  @ApiBody({
+    description: 'Find comments by rating',
+    type: FindByRating,
+    examples: {
+      example1: {
+        summary: 'Example request',
+        value: {
+          rating: 4,
+          productId: 1,
+          page: 1,
+          limit: 10,
+        },
+      },
+    },
+  })
   async findAllRatingByproduct(
     @Param('rating', ParseIntPipe) rating: number,
     @Body() findRatingDto: FindByRating,
@@ -69,23 +107,6 @@ export class ComentarioController {
   @Delete('/:id')
   @ApiBearerAuth('bearerAuth')
   async remove(@Param('id', ParseIntPipe) id: number) {
-    return this.comentarioService.remove({id: id});
+    return this.comentarioService.remove({ id: id });
   }
-
-  /*
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.comentarioService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateComentarioDto: UpdateComentarioDto,
-  ) {
-    return this.comentarioService.update(+id, updateComentarioDto);
-  }
-
-  
-    */
 }

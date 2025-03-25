@@ -3,21 +3,33 @@ import { CreateCategoriaDto } from './dto/create-categoria.dto';
 import { UpdateCategoriaDto } from './dto/update-categoria.dto';
 import { PaginationDto } from '../common';
 import { AuthGuard } from '../auth/guards/auth.guard';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
 import { CategoriaService } from './categoria.service';
 
 @Controller('categories')
 @ApiTags('Categorias')
 export class CategoriaController {
   constructor(
-     @Inject() private readonly categoriaService: CategoriaService,
+    @Inject() private readonly categoriaService: CategoriaService,
   ) {}
 
   @UseGuards(AuthGuard)
   @ApiBearerAuth('bearerAuth')
   @Post()
+  @ApiBody({
+    description: 'Create a new category',
+    type: CreateCategoriaDto,
+    examples: {
+      example1: {
+        summary: 'Example request',
+        value: {
+          nombreCategoria: 'Electronics',
+        },
+      },
+    },
+  })
   create(@Body() createCategoriaDto: CreateCategoriaDto) {
-    return this.categoriaService.create(createCategoriaDto);    
+    return this.categoriaService.create(createCategoriaDto);
   }
 
   @UseGuards(AuthGuard)
@@ -37,25 +49,36 @@ export class CategoriaController {
   @UseGuards(AuthGuard)
   @ApiBearerAuth('bearerAuth')
   @Patch(':id')
+  @ApiBody({
+    description: 'Update a category',
+    type: UpdateCategoriaDto,
+    examples: {
+      example1: {
+        summary: 'Example request',
+        value: {
+          nombreCategoria: 'Updated Electronics',
+        },
+      },
+    },
+  })
   async update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateCategoriaDto: UpdateCategoriaDto) {
-      return this.categoriaService.update(id, updateCategoriaDto);
+    @Body() updateCategoriaDto: UpdateCategoriaDto,
+  ) {
+    return this.categoriaService.update(id, updateCategoriaDto);
   }
 
   @UseGuards(AuthGuard)
   @ApiBearerAuth('bearerAuth')
   @Delete(':id')
-  async deleteProduct(@Param('id', ParseIntPipe) id: number){
+  async deleteProduct(@Param('id', ParseIntPipe) id: number) {
     return this.categoriaService.remove(id);
-  } 
+  }
 
   @UseGuards(AuthGuard)
   @ApiBearerAuth('bearerAuth')
   @Patch('/available/:id')
-  async makeAvailableProduct(
-    @Param('id', ParseIntPipe) id: number
-  ){
+  async makeAvailableProduct(@Param('id', ParseIntPipe) id: number) {
     return this.categoriaService.updateAvailable(id);
   }
 }
