@@ -48,7 +48,6 @@ export class FavoritosService extends PrismaClient implements OnModuleInit {
       // });
       return favorito;
     } catch (error) {
-      this.logger.error('Error en create:', error);
       throw error;
     }
   }
@@ -81,7 +80,6 @@ export class FavoritosService extends PrismaClient implements OnModuleInit {
           },
         },
       });
-      this.logger.log('favoritos encontrados', favoritos);
       return {
         data: favoritos,
         meta: {
@@ -91,7 +89,6 @@ export class FavoritosService extends PrismaClient implements OnModuleInit {
         },
       };
     } catch (error) {
-      this.logger.error('Error en findAllByUserId', error);
       throw error;
     }
   }
@@ -113,7 +110,6 @@ export class FavoritosService extends PrismaClient implements OnModuleInit {
       });
       return removedFavorite;
     } catch (error) {
-      this.logger.error('Error en findAllByUserId:', error);
       throw error;
     }
   }
@@ -130,7 +126,6 @@ export class FavoritosService extends PrismaClient implements OnModuleInit {
 
       return user;
     } catch (error) {
-      this.logger.error('Error validando usuario', error);
       throw error;
     }
   }

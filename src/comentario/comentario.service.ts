@@ -56,17 +56,14 @@ export class ComentarioService extends PrismaClient implements OnModuleInit {
           tituloComentario: createComentarioDto.tituloComentario,
         },
       });
-      this.logger.log('comentario creado:', JSON.stringify(comentario));
       return comentario;
     } catch (error) {
-      this.logger.error('Error en create:', error);
       throw error;
     }
   }
 
   async findAllByUser({ userId, page, limit }: FindUserDto) {
     try {
-      this.logger.log(`User ID recibido: ${userId}`);
 
       await this.favoritoService.validateUser(userId);
       const totalComentarios = await this.comentario.count({
@@ -92,7 +89,6 @@ export class ComentarioService extends PrismaClient implements OnModuleInit {
         },
       });
 
-      this.logger.log('comentarios encontrados', JSON.stringify(comentarios));
       return {
         data: comentarios,
         meta: {
@@ -101,7 +97,6 @@ export class ComentarioService extends PrismaClient implements OnModuleInit {
         },
       };
     } catch (error) {
-      this.logger.error('Error en findAllByUserId', error);
       throw error;
     }
   }
@@ -133,10 +128,6 @@ export class ComentarioService extends PrismaClient implements OnModuleInit {
         },
       });
 
-      this.logger.log(
-        'comentarios de producto encontrados',
-        JSON.stringify(comentProduct),
-      );
       return {
         data: comentProduct,
         meta: {
@@ -145,7 +136,6 @@ export class ComentarioService extends PrismaClient implements OnModuleInit {
         },
       };
     } catch (error) {
-      this.logger.error('Error en findAllByUserId', error);
       throw error;
     }
   }
@@ -163,16 +153,13 @@ export class ComentarioService extends PrismaClient implements OnModuleInit {
         where: { id: deleteComentDto.id },
         data: { available: false },
       });
-      this.logger.log('Comentario eliminado exitosamente');
       return comentario;
     } catch (error) {
-      this.logger.error('Error al eliminar comentario:', error);
       throw error;
     }
   }
   async FindByRatingComentario(data: FindByRating) {
     try {
-      this.logger.log('Datos recibidos service get:', JSON.stringify(data));
 
       //verificamos que exista el producto
       await this.productosService.exists(data.productId);
@@ -208,7 +195,6 @@ export class ComentarioService extends PrismaClient implements OnModuleInit {
           },
         },
       });
-      this.logger.log('comentarios encontrados', JSON.stringify(comentarios));
       return {
         data: comentarios,
         meta: {
@@ -217,7 +203,6 @@ export class ComentarioService extends PrismaClient implements OnModuleInit {
         },
       };
     } catch (error) {
-      this.logger.error('Error en FindByRatingComentario:', error);
       throw error;
     }
   }

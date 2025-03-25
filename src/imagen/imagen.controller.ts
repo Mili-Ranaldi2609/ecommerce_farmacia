@@ -6,7 +6,6 @@ import {
   Patch,
   Param,
   Delete,
-  Logger,
   UseGuards,
   Inject,
   UploadedFile,
@@ -16,19 +15,34 @@ import { CreateImagenDto } from './dto/create-imagen.dto';
 import { UpdateImagenDto } from './dto/update-imagen.dto';
 import { RemoveImagenDto } from './dto/remove-imagen.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
 import { ImagenService } from './imagen.service';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Express } from 'express';
 
 @Controller('imagen')
 @ApiTags('imagenes')
 export class ImagenController {
-  constructor(@Inject() private readonly imagenService: ImagenService ) {}
-  private readonly logger = new Logger('imagenController');
+  constructor(@Inject() private readonly imagenService: ImagenService) {}
 
   @UseGuards(AuthGuard)
   @Post()
   @ApiBearerAuth('bearerAuth')
+  @ApiBody({
+    description: 'Create a new image',
+    type: CreateImagenDto,
+    examples: {
+      example1: {
+        summary: 'Example request',
+        value: {
+          tipoImagen: 'Thumbnail',
+          descripcion: 'This is a thumbnail image.',
+          urlImagen: 'https://example.com/image.jpg',
+          productoId: 1,
+        },
+      },
+    },
+  })
   async createImagen(@Body() createImagenDto: CreateImagenDto) {
     return this.imagenService.create(createImagenDto);
   }
@@ -37,12 +51,24 @@ export class ImagenController {
   @Get('/:id')
   @ApiBearerAuth('bearerAuth')
   async findAllByProduct(@Param('id') id: number) {
-    return this.imagenService.findAllImgByProduct({idImg: id});
+    return this.imagenService.findAllImgByProduct({ idImg: id });
   }
 
   @UseGuards(AuthGuard)
-  @Delete(':idImagen') //la variable se tiene que llamar igual al DTO
+  @Delete(':idImagen')
   @ApiBearerAuth('bearerAuth')
+  @ApiBody({
+    description: 'Remove an image',
+    type: RemoveImagenDto,
+    examples: {
+      example1: {
+        summary: 'Example request',
+        value: {
+          idImagen: 1,
+        },
+      },
+    },
+  })
   async removeImage(
     @Param('idImagen') idImagen: number,
     @Body() removeImagenDto: RemoveImagenDto,
@@ -60,6 +86,20 @@ export class ImagenController {
   @UseGuards(AuthGuard)
   @Patch(':id')
   @ApiBearerAuth('bearerAuth')
+  @ApiBody({
+    description: 'Update an image',
+    type: UpdateImagenDto,
+    examples: {
+      example1: {
+        summary: 'Example request',
+        value: {
+          tipoImagen: 'Updated Thumbnail',
+          descripcion: 'This is an updated thumbnail image.',
+          urlImagen: 'https://example.com/updated-image.jpg',
+        },
+      },
+    },
+  })
   update(@Param('id') id: string, @Body() updateImagenDto: UpdateImagenDto) {
     return 0;
   }

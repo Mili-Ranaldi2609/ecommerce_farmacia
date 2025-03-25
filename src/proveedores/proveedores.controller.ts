@@ -6,7 +6,6 @@ import {
   Patch,
   Param,
   Delete,
-  Logger,
   Query,
   ParseIntPipe,
   UseGuards,
@@ -16,18 +15,31 @@ import { CreateProveedoreDto } from './dto/create-proveedore.dto';
 import { UpdateProveedoreDto } from './dto/update-proveedore.dto';
 import { PaginationDto } from '../common';
 import { AuthGuard } from '../auth/guards/auth.guard';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
 import { ProveedoresService } from './proveedores.service';
 
 @Controller('proveedores')
 @ApiTags('Proveedores')
 export class ProveedoresController {
-  constructor(@Inject() private readonly proveedorService: ProveedoresService ) {}
-  private logger = new Logger(ProveedoresController.name);
+  constructor(@Inject() private readonly proveedorService: ProveedoresService) {}
 
   @UseGuards(AuthGuard)
   @Post()
   @ApiBearerAuth('bearerAuth')
+  @ApiBody({
+    description: 'Create a new proveedor',
+    type: CreateProveedoreDto,
+    examples: {
+      example1: {
+        summary: 'Example request',
+        value: {
+          nombre: 'Proveedor A',
+          email: 'proveedorA@example.com',
+          telefono: '1234567890',
+        },
+      },
+    },
+  })
   create(@Body() createProveedoreDto: CreateProveedoreDto) {
     return this.proveedorService.create(createProveedoreDto);
   }
@@ -49,6 +61,20 @@ export class ProveedoresController {
   @UseGuards(AuthGuard)
   @Patch('/:id')
   @ApiBearerAuth('bearerAuth')
+  @ApiBody({
+    description: 'Update a proveedor',
+    type: UpdateProveedoreDto,
+    examples: {
+      example1: {
+        summary: 'Example request',
+        value: {
+          nombre: 'Updated Proveedor A',
+          email: 'updatedProveedorA@example.com',
+          telefono: '0987654321',
+        },
+      },
+    },
+  })
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateProveedoreDto: UpdateProveedoreDto,

@@ -24,10 +24,6 @@ export class RecetaService extends PrismaClient implements OnModuleInit {
 
   async create(createRecetaDto: CreateRecetaDto) {
     try {
-      this.logger.log(
-        'create receta service ',
-        JSON.stringify(createRecetaDto),
-      );
 
       await this.productosService.exists(createRecetaDto.productoId);
       await this.favoritoService.validateUser(createRecetaDto.userId);
@@ -35,16 +31,13 @@ export class RecetaService extends PrismaClient implements OnModuleInit {
       const receta = await this.receta.create({
         data: createRecetaDto,
       });
-      this.logger.log('receta created', JSON.stringify(receta));
       return receta;
     } catch (error) {
-      this.logger.error('Error en create receta:', error);
       throw new HttpException(error.message, 500);
     }
   }
 
   async findAll(data: PaginationDto) {
-    this.logger.log('findAllReceta service ');
     try {
       const {page = 1, limit = 10} = data;
       const totalRecetas = await this.receta.count({
@@ -63,7 +56,6 @@ export class RecetaService extends PrismaClient implements OnModuleInit {
           descripcion: true,
         },
       });
-      this.logger.log('recetas encontrados', JSON.stringify(recetas));
       return {
         data: recetas,
         meta: {
@@ -72,13 +64,11 @@ export class RecetaService extends PrismaClient implements OnModuleInit {
         },
       };
     } catch (error) {
-      this.logger.error('Error en findAllReceta:', error);
       throw new HttpException(error.message, 500);
     }
   }
   //encontrar todas las recetas de un solo usuario
   async findAllByUser({ userId, page, limit }: FindAllbyUserDto) {
-    this.logger.log('findAllRecetaByUser service ');
     try {
       page = page || 1;
       limit = limit || 10;
@@ -100,12 +90,7 @@ export class RecetaService extends PrismaClient implements OnModuleInit {
           descripcion: true,
         },
       });
-      this.logger.log(
-        'recetas para el usuario ',
-        userId,
-        ' encontrados',
-        JSON.stringify(recetas),
-      );
+    
       return {
         data: recetas,
         meta: {
@@ -114,14 +99,12 @@ export class RecetaService extends PrismaClient implements OnModuleInit {
         },
       };
     } catch (error) {
-      this.logger.error('Error en findAllReceta:', error);
       throw new HttpException(error.message, 500);
     }
   }
 
   async findOne(id: number) {
     try {
-      this.logger.log('findOne receta service ', JSON.stringify(id));
 
       const receta = await this.receta.findUnique({
         where: { id, available: true },
@@ -147,16 +130,13 @@ export class RecetaService extends PrismaClient implements OnModuleInit {
       //receta.userId = 2;
       await this.favoritoService.validateUser(receta.userId);
 
-      this.logger.log('receta encontrada', JSON.stringify(receta));
       return receta;
     } catch (error) {
-      this.logger.error('Error en findOne receta:', error);
       throw new HttpException(error.message, 500);
     }
   }
   async remove(id: number) {
     try {
-      this.logger.log('delete receta service ', JSON.stringify(id));
 
       await this.findOne(id);
 
@@ -165,10 +145,8 @@ export class RecetaService extends PrismaClient implements OnModuleInit {
         data: { available: false },
       });
 
-      this.logger.log('receta eliminada', JSON.stringify(receta));
       return receta;
     } catch (error) {
-      this.logger.error('Error en delete receta:', error);
       throw new HttpException(error.message, 500);
     }
   }

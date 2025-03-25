@@ -60,7 +60,6 @@ export class PresupuestoService extends PrismaClient implements OnModuleInit{
       })
       return createPresupuesto;
     } catch (error) {
-        this.logger.error('Error en create:', error);
         throw error
     }
   }
@@ -89,7 +88,6 @@ export class PresupuestoService extends PrismaClient implements OnModuleInit{
         }
       })
     } catch (error) {
-      this.logger.error('Error en find all:', error);
       throw error
     }
     return {
@@ -167,7 +165,6 @@ export class PresupuestoService extends PrismaClient implements OnModuleInit{
       })
       return updated
     } catch (error) {
-      this.logger.error('Error en create:', error);
       throw error
     }
   }
@@ -195,7 +192,6 @@ export class PresupuestoService extends PrismaClient implements OnModuleInit{
       })
       return {msg:'Presupuesto removido con exito'}
     } catch (error) {
-    this.logger.error('Error en create:', error);
     throw error
    }
     
@@ -224,7 +220,6 @@ export class PresupuestoService extends PrismaClient implements OnModuleInit{
       })
       return {msg:'Presupuesto habilitado con exito'}
     } catch (error) {
-    this.logger.error('Error en create:', error);
     throw error
    } 
   }
@@ -290,7 +285,6 @@ async cambiarEstadoPresupuesto(estadoDto: EstadoPresupuestoDto){
     return { message: 'Estado de la presupuesto y el historial actualizados correctamente' };
     
   } catch (error) {
-    this.logger.error('Error en cambiar estado presupuest:', error.message);
     throw new Error('Error al cambiar el estado de presupuesto.');
   }
 }
