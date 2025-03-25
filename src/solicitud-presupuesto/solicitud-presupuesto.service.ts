@@ -47,7 +47,6 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
     })
     return createSolPrep
    } catch (error) {
-    this.logger.error('Error en create:', error);
     throw error
    }
   }
@@ -110,7 +109,6 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
   
       return solicitudesP;
     } catch (error) {
-      this.logger.error('Error en find all:', error);
       throw error
     }
   }
@@ -211,7 +209,6 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
       })
       return updated
     } catch (error) {
-      this.logger.error('Error en create:', error);
       throw error
     }
   }
@@ -255,7 +252,6 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
       return {msg:'Solicitud removida con exito', removed}
 
     } catch (error) {
-      this.logger.error('Error en create:', error);
       throw error
     }
   }
@@ -305,7 +301,6 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
       }
 
     } catch (error) {
-      this.logger.error('Error en create:', error);
       throw error
     }
   }
@@ -377,7 +372,6 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
   
       return { message: 'Estado de la solicitud y el historial actualizados correctamente' };
     } catch (error) {
-      this.logger.error('Error en cambiarEstadoSolicitud:', error.message);
       throw new Error('Error al cambiar el estado de la solicitud de presupuesto.');
     }
   }
@@ -396,7 +390,6 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
         where: { id: userId },
       });
     } catch (error) {
-      this.logger.error('Error validando usuario', error);
       throw error;
     }
   }

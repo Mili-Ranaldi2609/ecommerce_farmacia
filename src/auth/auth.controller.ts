@@ -5,7 +5,7 @@ import { AuthGuard as GAuthGuard } from '@nestjs/passport';
 import { Token, User } from './decorators';
 import { CurrentUser } from './interfaces/current-user.interface';
 import { UpdateClientUser } from './dto/update-client-user.dto';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 
 @Controller('auth')
@@ -24,44 +24,103 @@ export class AuthController {
   }
 
   @Post('register')
+  @ApiBody({
+    description: 'Register a new user',
+    type: RegisterUserDto,
+    examples: {
+      example1: {
+        summary: 'Example request',
+        value: {
+          email: 'user@example.com',
+          password: 'password123',
+          nombre: 'John',
+          apellido: 'Doe',
+          direccion: '123 Main St',
+          fechaNacimiento: '1990-01-01',
+          sexo: 'M',
+          telefono: '1234567890',
+        },
+      },
+    },
+  })
   registerUser(@Body() registerUserDto: RegisterUserDto) {
     return this.authService.registerUser(registerUserDto);
   }
 
   @Post('login')
+  @ApiBody({
+    description: 'Login a user',
+    type: LoginUserDto,
+    examples: {
+      example1: {
+        summary: 'Example request',
+        value: {
+          email: 'user@example.com',
+          password: 'password123',
+        },
+      },
+    },
+  })
   loginUser(@Body() loginUserDto: LoginUserDto) {
     return this.authService.loginUser(loginUserDto);
   }
 
-  @UseGuards( AuthGuard )
+  @UseGuards(AuthGuard)
   @Post('verify')
   @ApiBearerAuth('bearerAuth')
-  verifyToken( @User() user: CurrentUser, @Token() token: string) {
+  @ApiBody({
+    description: 'Verify a token',
+    examples: {
+      example1: {
+        summary: 'Example request',
+        value: {
+          token: 'your-jwt-token',
+        },
+      },
+    },
+  })
+  verifyToken(@User() user: CurrentUser, @Token() token: string) {
     return this.authService.verifyToken(token);
   }
 
-  @UseGuards( AuthGuard )
+  @UseGuards(AuthGuard)
   @Get('/clients')
   @ApiBearerAuth('bearerAuth')
   findAll() {
     return this.authService.findAll();
   }
 
-  @UseGuards( AuthGuard )
+  @UseGuards(AuthGuard)
   @Get('/clients/:id')
   @ApiBearerAuth('bearerAuth')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.authService.findOne(id);
   }
 
-  @UseGuards( AuthGuard )
+  @UseGuards(AuthGuard)
   @Patch('/clients/:id')
   @ApiBearerAuth('bearerAuth')
+  @ApiBody({
+    description: 'Update client information',
+    type: UpdateClientUser,
+    examples: {
+      example1: {
+        summary: 'Example request',
+        value: {
+          id: 1,
+          nombre: 'John',
+          apellido: 'Doe',
+          direccion: '456 Elm St',
+          telefono: '9876543210',
+        },
+      },
+    },
+  })
   update(@Param('id', ParseIntPipe) id: number, @Body() updateClientUser: UpdateClientUser) {
-    this.authService.update(updateClientUser);
+    return this.authService.update(updateClientUser);
   }
 
-  @UseGuards( AuthGuard )
+  @UseGuards(AuthGuard)
   @Delete('/clients/:id')
   @ApiBearerAuth('bearerAuth')
   delete(@Param('id', ParseIntPipe) id: number) {

@@ -35,14 +35,16 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('API Full Shop Documentation')
-    .setDescription('[ Base URL:  ]')
+    .setDescription('[ Base URL: https://full-shop-monolito.vercel.app/]')
     .setVersion('1.0')
-    .addSecurity('bearerAuth', {
-      type: 'apiKey',
-      name: 'Authorization',
-      in: 'header',
-      description: 'Enter your Bearer token in the format: Bearer <token>'
-    })
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT', // Optional: Specifies the format of the token
+      },
+      'bearerAuth', // Name of the security scheme
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

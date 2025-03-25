@@ -4,7 +4,7 @@ export class CreateTipoProductoDto {
 
     @IsString()
     @IsNotEmpty()
-    public nombreTipo: string;
+    nombreTipo: string;
 
     @IsBoolean()
     @IsOptional()

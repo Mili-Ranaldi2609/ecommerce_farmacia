@@ -2,17 +2,33 @@ import { Controller, Get, Post, Body, Param, Query, Inject, Redirect, Patch, Par
 import { estadoPagoDto, PagoDto, PagoPaginationDto } from './dto';
 import { PagoStatus } from './enum/estadoPago.enum';
 import { AuthGuard } from '../auth/guards/auth.guard';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
 import { PagoService } from './pago.service';
 
 @Controller('pago')
 @ApiTags('Pagos')
 export class PagoController {
-  constructor(@Inject() private readonly pagoService: PagoService ) {}
+  constructor(@Inject() private readonly pagoService: PagoService) {}
 
   @UseGuards(AuthGuard)
   @Post()
   @ApiBearerAuth('bearerAuth')
+  @ApiBody({
+    description: 'Create a new payment',
+    type: PagoDto,
+    examples: {
+      example1: {
+        summary: 'Example request',
+        value: {
+          monto: 100.5,
+          estado: 'EN_PROCESO',
+          metodoPago: 'Credit Card',
+          usuario: 1,
+          pedidoId: 1,
+        },
+      },
+    },
+  })
   create(@Body() createPagoDto: PagoDto) {
     return this.pagoService.create(createPagoDto);
   }
@@ -20,6 +36,19 @@ export class PagoController {
   @UseGuards(AuthGuard)
   @Get()
   @ApiBearerAuth('bearerAuth')
+  @ApiBody({
+    description: 'Get all payments with pagination',
+    type: PagoPaginationDto,
+    examples: {
+      example1: {
+        summary: 'Example request',
+        value: {
+          page: 1,
+          limit: 10,
+        },
+      },
+    },
+  })
   findAll(@Body() pagoPaginationDto: PagoPaginationDto) {
     return this.pagoService.findAll(pagoPaginationDto);
   }
@@ -41,6 +70,19 @@ export class PagoController {
   @UseGuards(AuthGuard)
   @Patch()
   @ApiBearerAuth('bearerAuth')
+  @ApiBody({
+    description: 'Change the payment status',
+    type: estadoPagoDto,
+    examples: {
+      example1: {
+        summary: 'Example request',
+        value: {
+          id: 1,
+          estado: 'PAGADO',
+        },
+      },
+    },
+  })
   @Redirect('https://google.com.ar/', 301)
   changeEstadoPago(@Body() changeEstadoPago: estadoPagoDto) {
     return this.changeEstadoPago(changeEstadoPago);

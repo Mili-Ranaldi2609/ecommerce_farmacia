@@ -7,7 +7,6 @@ import {
   Param,
   Delete,
   Inject,
-  Logger,
   Query,
   ParseIntPipe,
   UseGuards,
@@ -15,21 +14,33 @@ import {
 import { CreateRecetaDto } from './dto/create-receta.dto';
 import { UpdateRecetaDto } from './dto/update-receta.dto';
 import { PaginationDto } from '../common';
-import { FindOneRecetaDto } from './dto/findOnereceta.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
 import { RecetaService } from './receta.service';
 
 @Controller('receta')
 @ApiTags('Recetas')
 export class RecetaController {
-  constructor(@Inject() private readonly recetaService: RecetaService ) {}
-
-  private logger = new Logger(RecetaController.name);
+  constructor(@Inject() private readonly recetaService: RecetaService) {}
 
   @UseGuards(AuthGuard)
   @Post()
   @ApiBearerAuth('bearerAuth')
+  @ApiBody({
+    description: 'Create a new receta',
+    type: CreateRecetaDto,
+    examples: {
+      example1: {
+        summary: 'Example request',
+        value: {
+          descripcion: 'Receta for a specific product',
+          userId: 1,
+          productoId: 2,
+          imagen: 'https://example.com/receta.jpg',
+        },
+      },
+    },
+  })
   create(@Body() createRecetaDto: CreateRecetaDto) {
     return this.recetaService.create(createRecetaDto);
   }
@@ -49,7 +60,11 @@ export class RecetaController {
     @Param('id', ParseIntPipe) id: number,
     @Query() paginationDto: PaginationDto,
   ) {
-    return this.recetaService.findAllByUser({userId: id, page: paginationDto.page, limit: paginationDto.limit});
+    return this.recetaService.findAllByUser({
+      userId: id,
+      page: paginationDto.page,
+      limit: paginationDto.limit,
+    });
   }
 
   //encontrar una receta
@@ -70,7 +85,23 @@ export class RecetaController {
   @UseGuards(AuthGuard)
   @Patch(':id')
   @ApiBearerAuth('bearerAuth')
-  update(@Param('id', ParseIntPipe) id: number, @Body() updateRecetaDto: UpdateRecetaDto) {
+  @ApiBody({
+    description: 'Update a receta',
+    type: UpdateRecetaDto,
+    examples: {
+      example1: {
+        summary: 'Example request',
+        value: {
+          descripcion: 'Updated receta description',
+          imagen: 'https://example.com/updated-receta.jpg',
+        },
+      },
+    },
+  })
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateRecetaDto: UpdateRecetaDto,
+  ) {
     return this.recetaService.update(id, updateRecetaDto);
   }
 }

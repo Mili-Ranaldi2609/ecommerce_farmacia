@@ -43,7 +43,6 @@ export class ImagenService extends PrismaClient implements OnModuleInit {
       });
       return imagen;
     } catch (error) {
-      this.logger.error('Error en create imagen:', error);
       throw error;
     }
   }
@@ -57,10 +56,8 @@ export class ImagenService extends PrismaClient implements OnModuleInit {
       const imagenes = await this.imagen.findMany({
         where: { productoId: findImagenDto.productoId, available: true },
       });
-      this.logger.log('imagenes encontradas', JSON.stringify(imagenes));
       return imagenes;
     } catch (error) {
-      this.logger.error('Error en findAllByImagen', error);
       throw error;
     }
   }
@@ -76,7 +73,6 @@ export class ImagenService extends PrismaClient implements OnModuleInit {
       });
       return imagen;
     } catch (error) {
-      this.logger.error('Error en findOne imagen:', error);
       throw error;
     }
   }
@@ -99,10 +95,8 @@ export class ImagenService extends PrismaClient implements OnModuleInit {
         data: { available: false },
       });
 
-      this.logger.log('Imagen eliminada exitosamente');
       return imagenEliminada;
     } catch (error) {
-      this.logger.error('Error en remove imagen:', error);
       throw error;
     }
   }

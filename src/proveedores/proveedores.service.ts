@@ -15,7 +15,6 @@ export class ProveedoresService extends PrismaClient implements OnModuleInit {
 
   async create(createProveedoreDto: CreateProveedoreDto) {
     try {
-      this.logger.log('create proveedore service ', createProveedoreDto);
 
       const { email, telefono } = createProveedoreDto;
 
@@ -24,7 +23,6 @@ export class ProveedoresService extends PrismaClient implements OnModuleInit {
       });
 
       if (Proveedorexistente) {
-        this.logger.error('Proveedor ya existe con este email o teléfono.');
         throw new Error(
           'El proveedor ya existe con el email o teléfono proporcionado.',
         );
@@ -34,13 +32,8 @@ export class ProveedoresService extends PrismaClient implements OnModuleInit {
         data: createProveedoreDto,
       });
 
-      this.logger.log(
-        'Proveedor creado exitosamente:',
-        JSON.stringify(proveedore),
-      );
       return proveedore;
     } catch (error) {
-      this.logger.error('Error creating proveedore', error);
       throw error;
     }
   }
@@ -64,7 +57,6 @@ export class ProveedoresService extends PrismaClient implements OnModuleInit {
           telefono: true,
         },
       });
-      this.logger.log('proveedores encontrados', JSON.stringify(proveedores));
       return {
         data: proveedores,
         meta: {
@@ -73,14 +65,12 @@ export class ProveedoresService extends PrismaClient implements OnModuleInit {
         },
       };
     } catch (error) {
-      this.logger.error('Error buscar todos provedores', error);
       throw error;
     }
   }
 
   async findOne(id: number) {
     try {
-      this.logger.log('findOne proveedore service ', JSON.stringify(id));
 
       const proveedor = await this.proveedores.findUnique({
         where: { id: id, available: true },
@@ -94,16 +84,13 @@ export class ProveedoresService extends PrismaClient implements OnModuleInit {
       if (!proveedor) {
         throw new Error(`Proveedor con id ${id} no encontrado`);
       }
-      this.logger.log('proveedor encontrado', JSON.stringify(proveedor));
       return proveedor;
     } catch (error) {
-      this.logger.error('Error buscar un proveedor', error);
       throw new HttpException(error.message, 500);
     }
   }
 
   async update(id: number, updateProveedoreDto: UpdateProveedoreDto) {
-    this.logger.log('update proveedore service ', updateProveedoreDto);
 
     try {
       await this.findOne(id);
@@ -113,10 +100,8 @@ export class ProveedoresService extends PrismaClient implements OnModuleInit {
         data: updateProveedoreDto,
       });
 
-      this.logger.log('proveedor actualizado', JSON.stringify(proveedor));
       return proveedor;
     } catch (error) {
-      this.logger.error('Error al actualizar proveedor', error);
       throw new HttpException(error.message, 500);
     }
   }
@@ -130,10 +115,8 @@ export class ProveedoresService extends PrismaClient implements OnModuleInit {
         data: { available: false },
       });
 
-      this.logger.log('proveedor eliminado', JSON.stringify(proveedor));
       return proveedor;
     } catch (error) {
-      this.logger.error('Error al eliminar proveedor', error);
       throw new HttpException(error.message, 500);
     }
   }

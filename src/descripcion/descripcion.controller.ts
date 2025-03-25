@@ -3,7 +3,7 @@ import { CreateDescripcionDto } from './dto/create-descripcion.dto';
 import { UpdateDescripcionDto } from './dto/update-descripcion.dto';
 import { SanitizeInterceptor } from '../common/sanitize.interceptor';
 import { AuthGuard } from '../auth/guards/auth.guard';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
 import { DescripcionService } from './descripcion.service';
 
 @Controller('descripcion')
@@ -12,16 +12,6 @@ export class DescripcionController {
   constructor(
     @Inject() private readonly descripcionService: DescripcionService,
   ) {}
-  //Create y getall no se usa, create se hace con producto
-  // @Post()
-  // create(@Body() createDescripcionDto: CreateDescripcionDto) {
-  //   return this.descripcionService.create(createDescripcionDto);
-  // }
-
-  // @Get()
-  // findAll() {
-  //   return this.descripcionService.findAll();
-  // }
 
   @UseGuards(AuthGuard)
   @Get(':id')
@@ -34,9 +24,22 @@ export class DescripcionController {
   @Patch(':id')
   @ApiBearerAuth('bearerAuth')
   @UseInterceptors(SanitizeInterceptor)
+  @ApiBody({
+    description: 'Update a description',
+    type: UpdateDescripcionDto,
+    examples: {
+      example1: {
+        summary: 'Example request',
+        value: {
+          descripcion: 'This is an updated description.',
+          caracteristicas: ['Feature 1', 'Feature 2', 'Feature 3'],
+        },
+      },
+    },
+  })
   async update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateDescripcionDto: UpdateDescripcionDto
+    @Body() updateDescripcionDto: UpdateDescripcionDto,
   ) {
     return this.descripcionService.update(id, updateDescripcionDto);
   }
