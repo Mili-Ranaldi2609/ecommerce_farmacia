@@ -108,7 +108,7 @@ export class ImagenController {
   @Post('upload')
   @UseInterceptors(FileInterceptor('image'))
   @ApiBearerAuth('bearerAuth')
-  async uploadImage(@UploadedFile() file: Express.Multer.File): Promise<{ url: string }> {
+  async uploadImage(@UploadedFile() file: Express.Multer.File){
     const url = await this.imagenService.uploadImage(file);
     return { url };
   }
