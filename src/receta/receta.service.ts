@@ -1,26 +1,20 @@
 import { HttpException, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { CreateRecetaDto } from './dto/create-receta.dto';
 import { UpdateRecetaDto } from './dto/update-receta.dto';
-import { PrismaClient } from '@prisma/client';
 import { ProductsService } from '../products/products.service';
 import { FavoritosService } from '../favorito/favoritos.service';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { FindAllbyUserDto } from './dto/FindAllUser-receta.dto';
+import { prisma } from '../prisma/prisma-client';
 
 @Injectable()
-export class RecetaService extends PrismaClient implements OnModuleInit {
+export class RecetaService {
   private readonly logger = new Logger('recetaService');
 
-  onModuleInit() {
-    this.$connect();
-    this.logger.log('Databse connected');
-  }
   constructor(
     private readonly productosService: ProductsService, // Inyección de dependencia
     private readonly favoritoService: FavoritosService,
-  ) {
-    super();
-  }
+  ) {}
 
   async create(createRecetaDto: CreateRecetaDto) {
     try {
@@ -28,7 +22,7 @@ export class RecetaService extends PrismaClient implements OnModuleInit {
       await this.productosService.exists(createRecetaDto.productoId);
       await this.favoritoService.validateUser(createRecetaDto.userId);
 
-      const receta = await this.receta.create({
+      const receta = await prisma.receta.create({
         data: createRecetaDto,
       });
       return receta;
@@ -40,12 +34,12 @@ export class RecetaService extends PrismaClient implements OnModuleInit {
   async findAll(data: PaginationDto) {
     try {
       const {page = 1, limit = 10} = data;
-      const totalRecetas = await this.receta.count({
+      const totalRecetas = await prisma.receta.count({
         where: { available: true },
       });
 
       const totalPages = Math.ceil(totalRecetas / limit);
-      const recetas = await this.receta.findMany({
+      const recetas = await prisma.receta.findMany({
         where: { available: true },
         skip: (page - 1) * limit,
         take: data.limit,
@@ -74,12 +68,12 @@ export class RecetaService extends PrismaClient implements OnModuleInit {
       limit = limit || 10;
       await this.favoritoService.validateUser(userId);
 
-      const totalRecetas = await this.receta.count({
+      const totalRecetas = await prisma.receta.count({
         where: { available: true, userId: userId },
       });
 
       const totalPages = Math.ceil(totalRecetas / limit);
-      const recetas = await this.receta.findMany({
+      const recetas = await prisma.receta.findMany({
         where: { available: true },
         skip: (page - 1) * limit,
         take: limit,
@@ -106,7 +100,7 @@ export class RecetaService extends PrismaClient implements OnModuleInit {
   async findOne(id: number) {
     try {
 
-      const receta = await this.receta.findUnique({
+      const receta = await prisma.receta.findUnique({
         where: { id, available: true },
         select: {
           userId: true,
@@ -140,7 +134,7 @@ export class RecetaService extends PrismaClient implements OnModuleInit {
 
       await this.findOne(id);
 
-      const receta = await this.receta.update({
+      const receta = await prisma.receta.update({
         where: { id },
         data: { available: false },
       });
@@ -152,7 +146,7 @@ export class RecetaService extends PrismaClient implements OnModuleInit {
   }
 
   update(id: number, updateRecetaDto: UpdateRecetaDto) {
-    const receta = this.receta.findFirst({
+    const receta = prisma.receta.findFirst({
       where: { id },
     });
 
@@ -160,7 +154,7 @@ export class RecetaService extends PrismaClient implements OnModuleInit {
       throw new HttpException('Receta Not Found', 400);
     }
 
-    return this.receta.update({
+    return prisma.receta.update({
       where: { id },
       data: updateRecetaDto,
     });

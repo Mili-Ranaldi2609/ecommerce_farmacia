@@ -1,23 +1,18 @@
 import { HttpException, HttpStatus, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { CreatePrecioFullSaludDto } from './dto/create-precio-full-salud.dto';
 import { UpdatePrecioFullSaludDto } from './dto/update-precio-full-salud.dto';
-import { PrismaClient } from '@prisma/client';
 import { PaginationDto } from '../common';
+import { prisma } from '../prisma/prisma-client';
 
 @Injectable()
-export class PrecioFullSaludService extends PrismaClient implements OnModuleInit {
+export class PrecioFullSaludService {
 
   private readonly logger = new Logger('PrecioFullSaludService')
-
-  onModuleInit() {
-    this.$connect();
-    this.logger.log('Databse connected')
-  }
 
   async create(createPrecioFullSaludDto: CreatePrecioFullSaludDto) {
     
     //buscar decuento habilitado
-    const existingAvailablePrice = await this.descuentoProducto.findFirst({
+    const existingAvailablePrice = await prisma.descuentoProducto.findFirst({
       where: {
         productoId: createPrecioFullSaludDto.productoId,
         available: true,
@@ -26,14 +21,14 @@ export class PrecioFullSaludService extends PrismaClient implements OnModuleInit
 
     // Si existe, cambia `available` a false en el precio actual
     if (existingAvailablePrice) {
-      await this.descuentoProducto.update({
+      await prisma.descuentoProducto.update({
         where: { id: existingAvailablePrice.id },
         data: { available: false },
       });
     }
 
      // Crear el nuevo precio con `available: true` y asociarlo al producto
-     return this.descuentoProducto.create({
+     return prisma.descuentoProducto.create({
       data: {
         precioDescuento: createPrecioFullSaludDto.precioDescuento,
         available: true,
@@ -43,13 +38,13 @@ export class PrecioFullSaludService extends PrismaClient implements OnModuleInit
   }
 
   findAll(paginationDto: PaginationDto) {
-    return this.descuentoProducto.findMany({
+    return prisma.descuentoProducto.findMany({
       include: { producto: true },
     });
   }
 
   findOne(id: number) {
-    const precio = this.descuentoProducto.findUnique(
+    const precio = prisma.descuentoProducto.findUnique(
       { where: { id } }
     );
     if (!precio) {
@@ -60,7 +55,7 @@ export class PrecioFullSaludService extends PrismaClient implements OnModuleInit
   }
 
   async exists(id: number) {
-    const descuentoProducto = await this.descuentoProducto.findFirst({
+    const descuentoProducto = await prisma.descuentoProducto.findFirst({
       where: { id }
     })
 
@@ -72,7 +67,7 @@ export class PrecioFullSaludService extends PrismaClient implements OnModuleInit
 
   async update(id: number, updatePrecioFullSaludDto: UpdatePrecioFullSaludDto) {
     await this.exists(id)
-    const updated = await this.descuentoProducto.update({
+    const updated = await prisma.descuentoProducto.update({
       where: { id },
       data: {
         precioDescuento: updatePrecioFullSaludDto.precioDescuento
@@ -84,7 +79,7 @@ export class PrecioFullSaludService extends PrismaClient implements OnModuleInit
   async remove(id: number) {
     await this.exists(+id)
 
-    return this.descuentoProducto.update({
+    return prisma.descuentoProducto.update({
       where: { id },
       data: { available: false }
     })
@@ -93,7 +88,7 @@ export class PrecioFullSaludService extends PrismaClient implements OnModuleInit
   async makeAvailable(id: number) {
     await this.exists(id)
 
-    return this.descuentoProducto.update({
+    return prisma.descuentoProducto.update({
       where: { id },
       data: { available: true }
     })

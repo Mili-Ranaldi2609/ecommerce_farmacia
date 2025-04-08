@@ -1,35 +1,28 @@
 import { HttpException, HttpStatus, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { CreateTiposUsoDto } from './dto/create-tipos-uso.dto';
 import { UpdateTiposUsoDto } from './dto/update-tipos-uso.dto';
-import { PrismaClient } from '@prisma/client';
 import { ProductsService } from '../products/products.service';
+import { prisma } from '../prisma/prisma-client';
 
 @Injectable()
-export class TiposUsoService extends PrismaClient implements OnModuleInit{
+export class TiposUsoService {
 
   private readonly logger = new Logger('DescripcionService')
 
-  constructor(private readonly productsService: ProductsService) {
-    super();
-  }
-
-  onModuleInit() {
-    this.$connect();
-    this.logger.log('Database connected')
-  }
+  constructor(private readonly productsService: ProductsService) {}
 
   create(createTiposUsoDto: CreateTiposUsoDto) {
-    return this.tipoUso.create({
+    return prisma.tipoUso.create({
       data: createTiposUsoDto,
     })
   }
 
   findAll() {
-    return this.tipoUso.findMany();
+    return prisma.tipoUso.findMany();
   }
 
   async findOne(id: number) {
-    const tipoUso = await this.tipoUso.findFirst({
+    const tipoUso = await prisma.tipoUso.findFirst({
       where: {id}
     })
     if(!tipoUso){
@@ -56,7 +49,7 @@ export class TiposUsoService extends PrismaClient implements OnModuleInit{
       throw new NotFoundException('La descripcion no fue encontrada');
     }
 
-    return this.tipoUso.update({
+    return prisma.tipoUso.update({
       where: {id},
       data:{
         descripcion, tiposDeUso
@@ -79,7 +72,7 @@ export class TiposUsoService extends PrismaClient implements OnModuleInit{
         }
       }
 
-    return this.tipoUso.update({
+    return prisma.tipoUso.update({
       where: {id},
       data:{
         available: false
@@ -99,7 +92,7 @@ export class TiposUsoService extends PrismaClient implements OnModuleInit{
       }
     }
 
-    return this.tipoUso.update({
+    return prisma.tipoUso.update({
       where: {id},
       data:{
         available: true

@@ -1,22 +1,17 @@
 import { HttpException, Injectable, Logger, OnModuleInit, Req } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { PrismaClient, Rol, UserType } from '@prisma/client';
 import { LoginUserDto, RegisterUserDto, UpdateClientUser } from './dto';
 import { JwtService } from '@nestjs/jwt';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { envs } from '../config';
+import { prisma } from '../prisma/prisma-client';
 
 @Injectable()
-export class AuthService extends PrismaClient implements OnModuleInit {
+export class AuthService {
   private readonly logger = new Logger('AuthService');
 
   constructor(private readonly jwtService: JwtService) {
-    super();
-  }
 
-  onModuleInit() {
-    this.$connect();
-    this.logger.log('Connected to the database');
   }
 
   async signJWT(payload: JwtPayload) {
@@ -41,7 +36,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
   async registerUser(registerUserDto: RegisterUserDto) {
     const { email, nombre, password } = registerUserDto;
 
-      const user = await this.user.findUnique({
+      const user = await prisma.user.findUnique({
         where: {
           email: email,
         },
@@ -51,14 +46,14 @@ export class AuthService extends PrismaClient implements OnModuleInit {
         throw new HttpException('User already exists', 400);
       }
 
-      const userCreate = await this.user.create({
+      const userCreate = await prisma.user.create({
         data: {
           email: email,
           password: bcrypt.hashSync(password, 10),
         },
       });
 
-      const ClientCreate = await this.client.create({
+      const ClientCreate = await prisma.client.create({
         data: {
           nombre: nombre,
           apellido: registerUserDto.apellido,
@@ -87,7 +82,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
     const { email, password } = loginUserDto;
 
     try {
-      const user = await this.user.findUnique({
+      const user = await prisma.user.findUnique({
         where: { email , googleBool: false},
       });
 
@@ -114,7 +109,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
 
   async findAll() {
     try {
-      return await this.client.findMany({where: {available: true}, include: {user: true}});
+      return await prisma.client.findMany({where: {available: true}, include: {user: true}});
     } catch (error) {
       throw new HttpException(error.message, 400);
     }
@@ -122,7 +117,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
 
   async findOne(id: number) {
     try {
-      return await this.client.findUnique({
+      return await prisma.client.findUnique({
         where: {
           id: id,
           available: true,
@@ -136,7 +131,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
 
   async update(updateClientDto: UpdateClientUser) {
     try {
-      const clientR = await this.client.findUnique({
+      const clientR = await prisma.client.findUnique({
         where: {
           id: updateClientDto.id,
           available: true,
@@ -145,7 +140,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
       if (!clientR) {
         throw new HttpException('Client not found', 400);
       }
-      const updatedClient = await this.client.update({
+      const updatedClient = await prisma.client.update({
         where: {
           id: updateClientDto.id,
         },
@@ -159,7 +154,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
 
   async remove(id: number) {
     try {
-      const clientR = await this.client.findUnique({
+      const clientR = await prisma.client.findUnique({
         where: {
           id: id,
           available: true,
@@ -170,7 +165,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
         throw new HttpException('client not found', 400);
       }
 
-      await this.client.update({
+      await prisma.client.update({
         where: { id: id },
         data: { available: false },
       });
@@ -192,11 +187,11 @@ export class AuthService extends PrismaClient implements OnModuleInit {
     const { email, firstName, lastName, picture, birthDate, sex, phoneNumber } = req.user;
 
 
-    const user = await this.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { email, googleBool: true },
     });
 
-    const userB = await this.user.findUnique({
+    const userB = await prisma.user.findUnique({
       where: { email, googleBool: false },
     });
 
@@ -205,7 +200,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
     }
 
     if (!user) {
-      const userC = await this.user.create({
+      const userC = await prisma.user.create({
         data: {
           email,
           password: "null",
@@ -213,7 +208,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
         },
       });
 
-      const clientX = await this.client.create({
+      const clientX = await prisma.client.create({
         data: {
           nombre: firstName,
           apellido: lastName,
@@ -229,7 +224,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
         },
       });
 
-      const userF = await this.user.findUnique({
+      const userF = await prisma.user.findUnique({
         where: { email, googleBool: true },
         include: { client: true },
       });

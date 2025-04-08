@@ -6,34 +6,26 @@ import {
 } from '@nestjs/common';
 import { CreateImagenDto } from './dto/create-imagen.dto';
 import { UpdateImagenDto } from './dto/update-imagen.dto';
-import { PrismaClient } from '@prisma/client';
 import { ProductsService } from '../products/products.service';
 import { RemoveImagenDto } from './dto/remove-imagen.dto';
 import { FindImagenDto } from './dto/find-imagen.dto';
 import 'multer';
 import { put } from '@vercel/blob';
+import { prisma } from '../prisma/prisma-client';
 
 @Injectable()
-export class ImagenService extends PrismaClient implements OnModuleInit {
+export class ImagenService {
   private readonly logger = new Logger('favoritoService');
 
-  onModuleInit() {
-    this.$connect();
-    this.logger.log('Database connected');
-  }
+
   constructor(
-    //private readonly favoritoService: FavoritosService,
     private readonly productsService: ProductsService,
-  ) {
-    super();
-  }
+  ) {}
 
   async create(createImagenDto: CreateImagenDto) {
     try {
-      //no me acuerdo porque puse el user id
-      //await this.favoritoService.validateUser(createImagenDto.userId);
       await this.productsService.exists(createImagenDto.productoId);
-      const imagen = await this.imagen.create({
+      const imagen = await prisma.imagen.create({
         data: {
           tipoImagen: createImagenDto.tipoImagen,
           descripcion: createImagenDto.descripcion,
@@ -53,7 +45,7 @@ export class ImagenService extends PrismaClient implements OnModuleInit {
         throw new BadRequestException('Producto ID is required');
       }
       await this.productsService.exists(findImagenDto.productoId);
-      const imagenes = await this.imagen.findMany({
+      const imagenes = await prisma.imagen.findMany({
         where: { productoId: findImagenDto.productoId, available: true },
       });
       return imagenes;
@@ -68,7 +60,7 @@ export class ImagenService extends PrismaClient implements OnModuleInit {
         throw new BadRequestException('Producto ID is required');
       }
       await this.productsService.exists(findImagenDto.productoId);
-      const imagen = await this.imagen.findUnique({
+      const imagen = await prisma.imagen.findUnique({
         where: { id: findImagenDto.idImg, available: true },
       });
       return imagen;
@@ -90,7 +82,7 @@ export class ImagenService extends PrismaClient implements OnModuleInit {
 
       await this.productsService.exists(removeImagenDto.productId);
 
-      const imagenEliminada = await this.imagen.update({
+      const imagenEliminada = await prisma.imagen.update({
         where: { id: removeImagenDto.idImagen },
         data: { available: false },
       });
