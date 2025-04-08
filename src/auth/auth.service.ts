@@ -189,7 +189,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
       throw new HttpException('No user from Google', 400);
     }
 
-    const { email, firstName, lastName, picture, birthDate, sex, phoneNumber, address } = req.user;
+    const { email, firstName, lastName, picture, birthDate, sex, phoneNumber } = req.user;
 
 
     const user = await this.user.findUnique({
@@ -218,7 +218,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
           nombre: firstName,
           apellido: lastName,
           available: true,
-          direccion: address,
+          direccion: "",
           fechaNacimiento: birthDate,
           sexo: sex,
           telefono: phoneNumber,

@@ -42,6 +42,8 @@ async function bootstrap() {
         type: 'http',
         scheme: 'bearer',
         bearerFormat: 'JWT', // Optional: Specifies the format of the token
+        description: '<h2><b>Ingrese solamente el token JWT, gracias.</b><h2>',
+        name: 'Authorization',
       },
       'bearerAuth', // Name of the security scheme
     )

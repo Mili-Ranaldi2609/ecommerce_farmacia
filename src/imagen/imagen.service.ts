@@ -101,7 +101,7 @@ export class ImagenService extends PrismaClient implements OnModuleInit {
     }
   }
 
-  async uploadImage(file: Express.Multer.File): Promise<string> {
+  async uploadImage(file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
