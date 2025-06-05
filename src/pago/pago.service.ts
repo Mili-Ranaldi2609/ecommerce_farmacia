@@ -1,30 +1,22 @@
-import { HttpException, HttpStatus, Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { EstadoPagos, PrismaClient } from '@prisma/client'; //CORREGIR ESTO URGENTE
+import { HttpException, HttpStatus, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { EstadoPagos } from '@prisma/client';
 import { estadoPagoDto, PagoDto, PagoPaginationDto, } from './dto';
-import { firstValueFrom } from 'rxjs';
+import { prisma } from '../prisma/prisma-client';
 
 @Injectable()
-export class PagoService extends PrismaClient implements OnModuleInit{
+export class PagoService {
 
     private readonly logger = new Logger('PagoService')
 
     constructor(
-        
-    ) {
-        super();
-    }
-
-    async onModuleInit() {
-        await this.$connect();
-        this.logger.log('Connected to the database');
-    }
+    ) {}
 
     async create(createPagoDto: PagoDto) {
         try {
             const id = createPagoDto.usuario;
 
             //1. Confirmar el id del Usuario
-            const usuario: any = await this.user.findFirst({
+            const usuario: any = await prisma.user.findFirst({
                 where: {id: id, }
             })
 
@@ -35,7 +27,7 @@ export class PagoService extends PrismaClient implements OnModuleInit{
             //2. Confirmar el id del Pedido
             const pedidoId = parseInt(createPagoDto.pedido.toString());
 
-            const pedido: any = await this.pedido.findFirst({
+            const pedido: any = await prisma.pedido.findFirst({
                 where: {id: pedidoId, available: true},
                 include: {detallesPedidos: {
                     select: {
@@ -54,7 +46,7 @@ export class PagoService extends PrismaClient implements OnModuleInit{
             const montoTotal = pedido.totalAmount;
 
             //4. Crear una transaccion en la base de datos
-            const pago = await this.pago.create({
+            const pago = await prisma.pago.create({
                 data: {
                     monto: montoTotal,
                     metodoPago: createPagoDto.metodoPago,
@@ -63,14 +55,14 @@ export class PagoService extends PrismaClient implements OnModuleInit{
                 }
             });
 
-            const historial = await this.historialEstadosPago.create({
+            const historial = await prisma.historialEstadosPago.create({
                 data: {
                     estado: pago.estado,
                     pagoId: pago.id,
                 }
             });
 
-            const changeEstadoPedido = await this.pedido.update({
+            const changeEstadoPedido = await prisma.pedido.update({
                 where: {id : pedidoId},
                 data: {
                   estado: "EN_ESPERA_PAGO"
@@ -78,7 +70,7 @@ export class PagoService extends PrismaClient implements OnModuleInit{
             });
 
 
-            const pedido2: any = await this.pedido.findFirst({
+            const pedido2: any = await prisma.pedido.findFirst({
                 where: {id: pedidoId, available: true},
                 include: {detallesPedidos: {
                     select: {
@@ -100,7 +92,7 @@ export class PagoService extends PrismaClient implements OnModuleInit{
     }
 
     async findAll(pagoPaginationDto: PagoPaginationDto) {
-        const totalPages = await this.pago.count({
+        const totalPages = await prisma.pago.count({
             where: {
                 estado: pagoPaginationDto.estado
             }
@@ -112,7 +104,7 @@ export class PagoService extends PrismaClient implements OnModuleInit{
         const perPage = limit;
 
         return {
-            data: await this.pago.findMany({
+            data: await prisma.pago.findMany({
                 skip: (currentPage - 1) * perPage,
                 take: perPage,
                 where: {
@@ -130,7 +122,7 @@ export class PagoService extends PrismaClient implements OnModuleInit{
 
     async findOne(id: number) {
 
-        const pago = await this.pago.findFirst({
+        const pago = await prisma.pago.findFirst({
             where: {id: id, available: true},
             include: {pedido: {
                 include: {detallesPedidos: {
@@ -148,7 +140,7 @@ export class PagoService extends PrismaClient implements OnModuleInit{
         }
 
         const idUsuario = parseInt(pago.usuario.toString());
-        const usuario: any = await this.user.findFirst({
+        const usuario: any = await prisma.user.findFirst({
             where: {id: idUsuario, }
         })
 
@@ -164,7 +156,7 @@ export class PagoService extends PrismaClient implements OnModuleInit{
     async remove(id: number) {
         await this.findOne(id);
 
-        const pago = await this.pago.update({
+        const pago = await prisma.pago.update({
             where: {id: id},
             data: {available: false},
         });
@@ -181,7 +173,7 @@ export class PagoService extends PrismaClient implements OnModuleInit{
             return pago;
         }
 
-        const historial = await this.historialEstadosPago.create({
+        const historial = await prisma.historialEstadosPago.create({
             data: {
                 estado: estado,
                 pagoId: id,
@@ -189,21 +181,21 @@ export class PagoService extends PrismaClient implements OnModuleInit{
         });
 
         if(estado === EstadoPagos.PAGADO) {
-            await await this.pedido.update({
+            await await prisma.pedido.update({
                 where: {id},
                 data: {
                   estado: 'COMPRADO'
                 }
               });
         } else if(estado === EstadoPagos.PAGO_RECHAZADO ) {
-            await await this.pedido.update({
+            await await prisma.pedido.update({
                 where: {id},
                 data: {
                   estado: 'PAGO_RECHAZADO'
                 }
               });
         } else if(estado === EstadoPagos.PAGO_CANCELADO) {
-            await this.pedido.update({
+            await prisma.pedido.update({
                 where: {id},
                 data: {
                   estado: 'CANCELADO'
@@ -211,12 +203,12 @@ export class PagoService extends PrismaClient implements OnModuleInit{
               });
         }
 
-        const pagoNuevo = await this.pago.update({
+        const pagoNuevo = await prisma.pago.update({
             where: {id: id},
             data: {estado: estado},
         });
 
-        const usuarioX: any = await this.user.findFirst({
+        const usuarioX: any = await prisma.user.findFirst({
             where: {id: pagoNuevo.usuario}
         });
 
@@ -224,7 +216,7 @@ export class PagoService extends PrismaClient implements OnModuleInit{
             throw new HttpException(`User with id ${pagoNuevo.usuario} not found`, HttpStatus.NOT_FOUND);
         }
 
-        const pedidoX: any = await this.pedido.findFirst({
+        const pedidoX: any = await prisma.pedido.findFirst({
             where: {id: pagoNuevo.pedidoId, available: true},
             include: {detallesPedidos: {
                 select: {
@@ -247,7 +239,7 @@ export class PagoService extends PrismaClient implements OnModuleInit{
     }
 
     async getAllEstadosPago(id: number) {
-        const historial = await this.historialEstadosPago.findMany({
+        const historial = await prisma.historialEstadosPago.findMany({
             where: {pagoId: id},
             orderBy: {fechaModificacion: 'desc'},
         });

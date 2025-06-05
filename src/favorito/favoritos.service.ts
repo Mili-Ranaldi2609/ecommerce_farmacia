@@ -1,31 +1,24 @@
 import { HttpException, Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { CreateFavoritoDto } from './dto/create-favorito.dto';
 import { ProductsService } from '../products/products.service';
-import { PrismaClient } from '@prisma/client';
-import { catchError, lastValueFrom, map } from 'rxjs';
 import { DeleteFavoritoDto } from './dto/delete-favorito.dto';
 import { FindFavoritoDto } from './dto/find-favorito.dto';
+import { prisma } from '../prisma/prisma-client';
 
 @Injectable()
-export class FavoritosService extends PrismaClient implements OnModuleInit {
+export class FavoritosService {
   private readonly logger = new Logger('favoritoService');
 
-  onModuleInit() {
-    this.$connect();
-    this.logger.log('Databse connected');
-  }
   constructor(
     @Inject() private readonly productosService: ProductsService, // Inyección de dependencia
-  ) {
-    super();
-  }
+  ) {}
 
   async create(createFavoritoDto: CreateFavoritoDto) {
     try {
       this.productosService.exists(createFavoritoDto.productId);
       await this.productosService.exists(createFavoritoDto.productId);
       await this.productosService.exists(createFavoritoDto.userId);
-      const favorito = await this.favorito.upsert({
+      const favorito = await prisma.favorito.upsert({
         //upsert actualiza si existe, o crea si no existe
         where: {
           userId_productId: {
@@ -40,7 +33,7 @@ export class FavoritosService extends PrismaClient implements OnModuleInit {
           available: true,
         }, // Crea si no existe
       });
-      // const favorito = await this.favorito.create({
+      // const favorito = await prisma.favorito.create({
       //   data: {
       //     userId: createFavoritoDto.userId,
       //     productId: createFavoritoDto.productId,
@@ -57,14 +50,14 @@ export class FavoritosService extends PrismaClient implements OnModuleInit {
     try {
       await this.validateUser(userId);
 
-      const totalFavoritos = await this.favorito.count({
+      const totalFavoritos = await prisma.favorito.count({
         where: { userId, available: true },
       });
 
       const totalPages = Math.ceil(totalFavoritos / limit);
       page = page ?? 1; // Provide a default value for page
 
-      const favoritos = await this.favorito.findMany({
+      const favoritos = await prisma.favorito.findMany({
         where: { userId, available: true },
         skip: (page - 1) * limit,
         take: limit,
@@ -97,7 +90,7 @@ export class FavoritosService extends PrismaClient implements OnModuleInit {
     try {
       await this.validateUser(deleteFavorite.userId);
       await this.productosService.exists(deleteFavorite.productId);
-      const removedFavorite = this.favorito.update({
+      const removedFavorite = prisma.favorito.update({
         where: {
           userId_productId: {
             userId: deleteFavorite.userId,
@@ -116,7 +109,7 @@ export class FavoritosService extends PrismaClient implements OnModuleInit {
 
   async validateUser(userId: number) {
     try {
-      const user = await this.user.findUnique({
+      const user = await prisma.user.findUnique({
         where: { id: userId },
       });
 

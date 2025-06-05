@@ -1,23 +1,22 @@
-import { HttpException, Injectable, Logger, OnModuleInit, Req } from '@nestjs/common';
+import {
+  HttpException,
+  Injectable,
+  Logger,
+  OnModuleInit,
+  Req,
+} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { PrismaClient, Rol, UserType } from '@prisma/client';
 import { LoginUserDto, RegisterUserDto, UpdateClientUser } from './dto';
 import { JwtService } from '@nestjs/jwt';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { envs } from '../config';
+import { prisma } from '../prisma/prisma-client';
 
 @Injectable()
-export class AuthService extends PrismaClient implements OnModuleInit {
+export class AuthService {
   private readonly logger = new Logger('AuthService');
 
-  constructor(private readonly jwtService: JwtService) {
-    super();
-  }
-
-  onModuleInit() {
-    this.$connect();
-    this.logger.log('Connected to the database');
-  }
+  constructor(private readonly jwtService: JwtService) {}
 
   async signJWT(payload: JwtPayload) {
     return this.jwtService.sign(payload);
@@ -34,61 +33,61 @@ export class AuthService extends PrismaClient implements OnModuleInit {
         token: await this.signJWT(user),
       };
     } catch (error) {
-       (error);
+      error;
     }
   }
 
   async registerUser(registerUserDto: RegisterUserDto) {
     const { email, nombre, password } = registerUserDto;
 
-      const user = await this.user.findUnique({
-        where: {
-          email: email,
-        },
-      });
+    const user = await prisma.user.findUnique({
+      where: {
+        email: email,
+      },
+    });
 
-      if (user) {
-        throw new HttpException('User already exists', 400);
-      }
+    if (user) {
+      throw new HttpException('User already exists', 400);
+    }
 
-      const userCreate = await this.user.create({
-        data: {
-          email: email,
-          password: bcrypt.hashSync(password, 10),
-        },
-      });
+    const userCreate = await prisma.user.create({
+      data: {
+        email: email,
+        password: bcrypt.hashSync(password, 10),
+      },
+    });
 
-      const ClientCreate = await this.client.create({
-        data: {
-          nombre: nombre,
-          apellido: registerUserDto.apellido,
-          direccion: registerUserDto.direccion,
-          available: true,
-          fechaNacimiento: registerUserDto.fechaNacimiento,
-          sexo: registerUserDto.sexo,
-          telefono: registerUserDto.telefono,
-          userType: registerUserDto.userType,
-          rol: registerUserDto.rol,
-          userId: userCreate.id,
-          urlImagen: registerUserDto.urlImagen,
-        },
-      });
+    const ClientCreate = await prisma.client.create({
+      data: {
+        nombre: nombre,
+        apellido: registerUserDto.apellido,
+        direccion: registerUserDto.direccion,
+        available: true,
+        fechaNacimiento: registerUserDto.fechaNacimiento,
+        sexo: registerUserDto.sexo,
+        telefono: registerUserDto.telefono,
+        userType: registerUserDto.userType,
+        rol: registerUserDto.rol,
+        userId: userCreate.id,
+        urlImagen: registerUserDto.urlImagen,
+      },
+    });
 
-      const { password: __, ...rest } = userCreate;
+    const { password: __, ...rest } = userCreate;
 
-      return {
-        user: rest,
-        client: ClientCreate,
-        token: await this.signJWT(rest),
-      };
+    return {
+      user: rest,
+      client: ClientCreate,
+      token: await this.signJWT(rest),
+    };
   }
 
   async loginUser(loginUserDto: LoginUserDto) {
     const { email, password } = loginUserDto;
 
     try {
-      const user = await this.user.findUnique({
-        where: { email , googleBool: false},
+      const user = await prisma.user.findUnique({
+        where: { email, googleBool: false },
       });
 
       if (!user) {
@@ -98,7 +97,6 @@ export class AuthService extends PrismaClient implements OnModuleInit {
       const isPasswordValid = bcrypt.compareSync(password, user.password);
 
       if (!isPasswordValid) {
-        
       }
 
       const { password: __, ...rest } = user;
@@ -107,14 +105,15 @@ export class AuthService extends PrismaClient implements OnModuleInit {
         user: rest,
         token: await this.signJWT(rest),
       };
-    } catch (error) {
-      
-    }
+    } catch (error) {}
   }
 
   async findAll() {
     try {
-      return await this.client.findMany({where: {available: true}, include: {user: true}});
+      return await prisma.client.findMany({
+        where: { available: true },
+        include: { user: true },
+      });
     } catch (error) {
       throw new HttpException(error.message, 400);
     }
@@ -122,7 +121,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
 
   async findOne(id: number) {
     try {
-      return await this.client.findUnique({
+      return await prisma.client.findUnique({
         where: {
           id: id,
           available: true,
@@ -136,20 +135,22 @@ export class AuthService extends PrismaClient implements OnModuleInit {
 
   async update(updateClientDto: UpdateClientUser) {
     try {
-      const clientR = await this.client.findUnique({
+      const { id, ...rest } = updateClientDto;
+      const clientR = await prisma.client.findFirst({
         where: {
-          id: updateClientDto.id,
+          id: id,
           available: true,
         },
       });
+
       if (!clientR) {
         throw new HttpException('Client not found', 400);
       }
-      const updatedClient = await this.client.update({
+      const updatedClient = await prisma.client.update({
         where: {
-          id: updateClientDto.id,
+          id: clientR.id,
         },
-        data: updateClientDto,
+        data: rest,
       });
       return updatedClient;
     } catch (error) {
@@ -159,7 +160,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
 
   async remove(id: number) {
     try {
-      const clientR = await this.client.findUnique({
+      const clientR = await prisma.client.findUnique({
         where: {
           id: id,
           available: true,
@@ -170,7 +171,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
         throw new HttpException('client not found', 400);
       }
 
-      await this.client.update({
+      await prisma.client.update({
         where: { id: id },
         data: { available: false },
       });
@@ -180,7 +181,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
         message: 'Client deleted',
       };
     } catch (error) {
-      throw new HttpException(error.message, 400);  
+      throw new HttpException(error.message, 400);
     }
   }
 
@@ -189,36 +190,36 @@ export class AuthService extends PrismaClient implements OnModuleInit {
       throw new HttpException('No user from Google', 400);
     }
 
-    const { email, firstName, lastName, picture, birthDate, sex, phoneNumber } = req.user;
+    const { email, firstName, lastName, picture, birthDate, sex, phoneNumber } =
+      req.user;
 
-
-    const user = await this.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { email, googleBool: true },
     });
 
-    const userB = await this.user.findUnique({
+    const userB = await prisma.user.findUnique({
       where: { email, googleBool: false },
     });
 
-    if(userB) {
+    if (userB) {
       throw new HttpException('User already exists', 400);
     }
 
     if (!user) {
-      const userC = await this.user.create({
+      const userC = await prisma.user.create({
         data: {
           email,
-          password: "null",
+          password: 'null',
           googleBool: true,
         },
       });
 
-      const clientX = await this.client.create({
+      const clientX = await prisma.client.create({
         data: {
           nombre: firstName,
           apellido: lastName,
           available: true,
-          direccion: "",
+          direccion: '',
           fechaNacimiento: birthDate,
           sexo: sex,
           telefono: phoneNumber,
@@ -229,7 +230,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
         },
       });
 
-      const userF = await this.user.findUnique({
+      const userF = await prisma.user.findUnique({
         where: { email, googleBool: true },
         include: { client: true },
       });
@@ -240,11 +241,11 @@ export class AuthService extends PrismaClient implements OnModuleInit {
 
       const { password: __, ...rest } = userF;
 
-    return {
-      user: rest,
-      token: await this.signJWT(rest),
-    };
-    } else if(user) {
+      return {
+        user: rest,
+        token: await this.signJWT(rest),
+      };
+    } else if (user) {
       const { password: __, googleBool, ...rest } = user;
 
       return {
