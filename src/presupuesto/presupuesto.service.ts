@@ -1,30 +1,23 @@
 import { HttpException, HttpStatus, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { CreatePresupuestoDto } from './dto/create-presupuesto.dto';
 import { UpdatePresupuestoDto } from './dto/update-presupuesto.dto';
-import { PrismaClient } from '@prisma/client';
 import { EstadoPresupuestoDto } from './dto/estado-presupuesto.dto';
 import { ProveedoresService } from '.././proveedores/proveedores.service';
 import { ProductsService } from '.././products/products.service';
 import { SolicitudPresupuestoService } from '.././solicitud-presupuesto/solicitud-presupuesto.service';
 import { PaginationDto } from '../common';
+import { prisma } from '../prisma/prisma-client';
 
 @Injectable()
-export class PresupuestoService extends PrismaClient implements OnModuleInit{
+export class PresupuestoService {
 
   private readonly logger = new Logger('SolicitudPresupuestoService')
-    
-    onModuleInit() {
-      this.$connect();
-      this.logger.log('Database connected')
-    }
 
     constructor( 
       private readonly proveedoresService: ProveedoresService,
       private readonly productoService: ProductsService,
       private readonly solicitudService: SolicitudPresupuestoService
-    ){
-      super()
-    }
+    ){}
 
     async create(createPresupuestoDto: CreatePresupuestoDto) {
     try {
@@ -35,7 +28,7 @@ export class PresupuestoService extends PrismaClient implements OnModuleInit{
         throw new Error('El proveedorId es obligatorio para crear un presupuesto.');
       }
 
-      const createPresupuesto = await this.presupuesto.create({
+      const createPresupuesto = await prisma.presupuesto.create({
         data:{
           descripcion, monto, cantidad, 
           producto:{
@@ -49,7 +42,7 @@ export class PresupuestoService extends PrismaClient implements OnModuleInit{
           }
         }
       })
-      const estadoPresupuesto = await this.historialEstadoPresupuesto.create({
+      const estadoPresupuesto = await prisma.historialEstadoPresupuesto.create({
         data:{
           estado: 'CREADO',
           available: true,
@@ -67,11 +60,11 @@ export class PresupuestoService extends PrismaClient implements OnModuleInit{
   async findAll(paginationDto: PaginationDto) {
     const { page = 1, limit = 10 } = paginationDto;
   
-    const totalPages = await this.product.count({ where: { available: true } });
+    const totalPages = await prisma.product.count({ where: { available: true } });
     const lastPage = Math.ceil(totalPages / limit);
     let presupuesto 
     try {
-       presupuesto = await this.presupuesto.findMany({
+       presupuesto = await prisma.presupuesto.findMany({
         skip: (page - 1) * limit,
         take: limit,
         where: { available: true },
@@ -101,7 +94,7 @@ export class PresupuestoService extends PrismaClient implements OnModuleInit{
   }
 
   async findOne(id: number) {
-    const presupuesto = await this.presupuesto.findUnique({
+    const presupuesto = await prisma.presupuesto.findUnique({
       where: { id: id },
         select:{
           id: true,
@@ -122,7 +115,7 @@ export class PresupuestoService extends PrismaClient implements OnModuleInit{
   }
 
   async exists(id: number){
-      const presupuesto = this.presupuesto.findFirst({
+      const presupuesto = prisma.presupuesto.findFirst({
         where:{id}
       })
       if (!presupuesto) {
@@ -142,7 +135,7 @@ export class PresupuestoService extends PrismaClient implements OnModuleInit{
         throw new Error(`Presupuesto con id ${id} no encontrada`)
       }
 
-      const updated = await this.presupuesto.update({
+      const updated = await prisma.presupuesto.update({
         where: { id: id },
         data:{descripcion, monto, cantidad,
           ...(productoId && {
@@ -172,7 +165,7 @@ export class PresupuestoService extends PrismaClient implements OnModuleInit{
   async remove(id: number) {
     try {
       
-      const presupuesto = await this.presupuesto.findUnique({
+      const presupuesto = await prisma.presupuesto.findUnique({
         where: { id },
         include: { historialPresupuesto: true }, // Asegurarse de incluir la relación con el historial
       });
@@ -184,7 +177,7 @@ export class PresupuestoService extends PrismaClient implements OnModuleInit{
         throw new Error(`Presupuesto con id ${id} ya esta removido`);
       }
 
-      const removed = await this.presupuesto.update({
+      const removed = await prisma.presupuesto.update({
         where:{id},
         data:{
           available: false,
@@ -200,7 +193,7 @@ export class PresupuestoService extends PrismaClient implements OnModuleInit{
   async enable(id: number) {
     try {
       
-      const presupuesto = await this.presupuesto.findUnique({
+      const presupuesto = await prisma.presupuesto.findUnique({
         where: { id },
         include: { historialPresupuesto: true }, // Asegurarse de incluir la relación con el historial
       });
@@ -212,7 +205,7 @@ export class PresupuestoService extends PrismaClient implements OnModuleInit{
         throw new Error(`Presupuesto con id ${id} ya esta habilitado`);
       }
 
-      const removed = await this.presupuesto.update({
+      const removed = await prisma.presupuesto.update({
         where:{id},
         data:{
           available: true,
@@ -229,7 +222,7 @@ async cambiarEstadoPresupuesto(estadoDto: EstadoPresupuestoDto){
   try {
     const {id, estado} = estadoDto
 
-    const presupuesto = await this.presupuesto.findUnique({
+    const presupuesto = await prisma.presupuesto.findUnique({
       where: { id },
       include:{ historialPresupuesto: true}
     })
@@ -254,7 +247,7 @@ async cambiarEstadoPresupuesto(estadoDto: EstadoPresupuestoDto){
       }
 
       if(historialActual){
-        const historialActualizado = await this.historialEstadoPresupuesto.update({
+        const historialActualizado = await prisma.historialEstadoPresupuesto.update({
           where:{id: historialActual.id},
           data:{
             available: false,
@@ -263,7 +256,7 @@ async cambiarEstadoPresupuesto(estadoDto: EstadoPresupuestoDto){
         })
       }
 
-      const nuevoHistorial = await this.historialEstadoPresupuesto.create({
+      const nuevoHistorial = await prisma.historialEstadoPresupuesto.create({
         data:{
           estado: estado,
           fechaModificacion: new Date(),
@@ -275,7 +268,7 @@ async cambiarEstadoPresupuesto(estadoDto: EstadoPresupuestoDto){
       })
 
       if(nuevoHistorial) {
-        const presupuestoActualizadoEstado = await this.presupuesto.update({
+        const presupuestoActualizadoEstado = await prisma.presupuesto.update({
           where: { id },
           data:{estado: estado}
         })
@@ -290,7 +283,7 @@ async cambiarEstadoPresupuesto(estadoDto: EstadoPresupuestoDto){
 }
 
 async getAllEstados(id: number){
-  const historial = await this.historialEstadoPresupuesto.findMany({
+  const historial = await prisma.historialEstadoPresupuesto.findMany({
     where:{presupuestoId: id},
     orderBy: {fechaModificacion: 'desc'}
   })
@@ -304,7 +297,7 @@ async findMyPresupuesto(id: number) {
   if(!proveedor){
     throw new Error('Presupuesto de proveedor no encontrado, verifique el proveedor e intente nuevamente')
   }
-  const presupuesto = await this.presupuesto.findUnique({
+  const presupuesto = await prisma.presupuesto.findUnique({
     where: { proveedorId: id },
       select:{
         id: true,
@@ -331,7 +324,7 @@ async findPresupuestosBySolicitud(id: number) {
   if(!solicitud){
     throw new Error('Presupuesto de solicitud no encontrado, verifique la solicitud e intente nuevamente')
   }
-  const presupuesto = await this.presupuesto.findUnique({
+  const presupuesto = await prisma.presupuesto.findUnique({
     where: { solicitudPresupuestoId: id },
       select:{
         id: true,
@@ -359,7 +352,7 @@ async findPresupuestosByProducto(id: number) {
     throw new Error('Presupuesto de producto no encontrado, verifique el producto e intente nuevamente')
   }
 
-  const presupuesto = await this.presupuesto.findUnique({
+  const presupuesto = await prisma.presupuesto.findUnique({
     where: { productoId: id },
       select:{
         id: true,

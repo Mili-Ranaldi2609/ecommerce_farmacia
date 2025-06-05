@@ -1,28 +1,21 @@
 import { HttpException, HttpStatus, Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
 import { ProductsService } from '../products/products.service';
 import { CreatePedidoDto, PedidoPaginationDto, UpdatePedidoDto, estadoDto } from './dto';
+import { prisma } from '../prisma/prisma-client';
 
 
 @Injectable()
-export class PedidoService extends PrismaClient implements OnModuleInit{
+export class PedidoService {
 
   private readonly logger = new Logger('PedidoService');
 
-  constructor(@Inject() private readonly productService: ProductsService) {
-    super();
-  }
-
-  async onModuleInit() {
-    await this.$connect();
-    this.logger.log('Connected to the database');
-  }
+  constructor(@Inject() private readonly productService: ProductsService) {}
 
   async create(createPedidoDto: CreatePedidoDto) {
     try {
       const id = parseInt(createPedidoDto.usuarioId.toString());
       //1. Confirmar el id del Usuario
-      const usuario = await this.user.findUnique({where: {id}});
+      const usuario = await prisma.user.findUnique({where: {id}});
 
       if(!usuario) {
         throw new HttpException('User not found', HttpStatus.NOT_FOUND);
@@ -46,7 +39,7 @@ export class PedidoService extends PrismaClient implements OnModuleInit{
 
 
       //4. Crear una transaccion en la base de datos
-      const pedido = await this.pedido.create({
+      const pedido = await prisma.pedido.create({
         data: {
           totalAmount: totalAmount,
           totalItems: totalItems,
@@ -72,7 +65,7 @@ export class PedidoService extends PrismaClient implements OnModuleInit{
         }
       });
 
-      const historial = await this.historialEstados.create({
+      const historial = await prisma.historialEstados.create({
         data: {
           estado: pedido.estado,
           pedidoId: pedido.id,
@@ -94,7 +87,7 @@ export class PedidoService extends PrismaClient implements OnModuleInit{
   }
 
   async findAll(pedidoPaginationDto: PedidoPaginationDto) {
-    const totalPages = await this.pedido.count({
+    const totalPages = await prisma.pedido.count({
       where: {
         estado: pedidoPaginationDto.estado
       }
@@ -104,7 +97,7 @@ export class PedidoService extends PrismaClient implements OnModuleInit{
     const perPage = pedidoPaginationDto.limit ?? 10; // default value of 10
 
     return {
-      data: await this.pedido.findMany({
+      data: await prisma.pedido.findMany({
         skip: (currentPage - 1) * perPage,
         take: perPage,
         where: {
@@ -122,7 +115,7 @@ export class PedidoService extends PrismaClient implements OnModuleInit{
 
   async findOne(id: number) {
     
-    const pedido = await this.pedido.findUnique({
+    const pedido = await prisma.pedido.findUnique({
       where: {id: id, available: true},
       include: {detallesPedidos: {
         select: {
@@ -158,10 +151,10 @@ export class PedidoService extends PrismaClient implements OnModuleInit{
 
     await this.findOne(id);
 
-    const pedido = this.pedido.update({where: {id}, data: data});
+    const pedido = prisma.pedido.update({where: {id}, data: data});
 
     if(updatePedidoDto.estado != null) {
-      const historial = await this.historialEstados.create({
+      const historial = await prisma.historialEstados.create({
         data: {
           estado: updatePedidoDto.estado,
           pedidoId: id,
@@ -175,7 +168,7 @@ export class PedidoService extends PrismaClient implements OnModuleInit{
   async remove(id: number) {
     await this.findOne(id);
 
-    const pedido = await this.pedido.update({
+    const pedido = await prisma.pedido.update({
       where: {id},
       data: { available: false },
     });
@@ -193,14 +186,14 @@ export class PedidoService extends PrismaClient implements OnModuleInit{
       return pedido;
     }
 
-    const historial = await this.historialEstados.create({
+    const historial = await prisma.historialEstados.create({
       data: {
         estado: estado,
         pedidoId: id,
       }
     });
 
-    return this.pedido.update({
+    return prisma.pedido.update({
       where: {id},
       data: {
         estado: estado
@@ -209,7 +202,7 @@ export class PedidoService extends PrismaClient implements OnModuleInit{
   }
 
   async getAllEstados(id: number) {
-    const historial = await this.historialEstados.findMany({
+    const historial = await prisma.historialEstados.findMany({
       where: {pedidoId: id},
       orderBy: {fechaModificacion: 'desc'},
     });

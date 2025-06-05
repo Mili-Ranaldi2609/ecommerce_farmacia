@@ -1,24 +1,19 @@
 import { HttpException, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { CreateProveedoreDto } from './dto/create-proveedore.dto';
 import { UpdateProveedoreDto } from './dto/update-proveedore.dto';
-import { PrismaClient } from '@prisma/client';
 import { PaginationDto } from '../common/dto/pagination.dto';
+import { prisma } from '../prisma/prisma-client';
 
 @Injectable()
-export class ProveedoresService extends PrismaClient implements OnModuleInit {
+export class ProveedoresService {
   private readonly logger = new Logger('ProveedoresService');
-
-  onModuleInit() {
-    this.$connect();
-    this.logger.log('Databse connected');
-  }
 
   async create(createProveedoreDto: CreateProveedoreDto) {
     try {
 
       const { email, telefono } = createProveedoreDto;
 
-      const Proveedorexistente = await this.proveedores.findFirst({
+      const Proveedorexistente = await prisma.proveedores.findFirst({
         where: { OR: [{ email }, { telefono }] },
       });
 
@@ -28,7 +23,7 @@ export class ProveedoresService extends PrismaClient implements OnModuleInit {
         );
       }
 
-      const proveedore = this.proveedores.create({
+      const proveedore = prisma.proveedores.create({
         data: createProveedoreDto,
       });
 
@@ -41,12 +36,12 @@ export class ProveedoresService extends PrismaClient implements OnModuleInit {
   async findAll(paginationDto: PaginationDto) {
     try {
       const { page = 1, limit = 10 } = paginationDto;
-      const totalProveedores = await this.proveedores.count({
+      const totalProveedores = await prisma.proveedores.count({
         where: { available: true },
       });
 
       const totalPages = Math.ceil(totalProveedores / limit);
-      const proveedores = await this.proveedores.findMany({
+      const proveedores = await prisma.proveedores.findMany({
         where: { available: true },
         skip: (page - 1) * limit,
         take: paginationDto.limit,
@@ -72,7 +67,7 @@ export class ProveedoresService extends PrismaClient implements OnModuleInit {
   async findOne(id: number) {
     try {
 
-      const proveedor = await this.proveedores.findUnique({
+      const proveedor = await prisma.proveedores.findUnique({
         where: { id: id, available: true },
         select: {
           nombre: true,
@@ -95,7 +90,7 @@ export class ProveedoresService extends PrismaClient implements OnModuleInit {
     try {
       await this.findOne(id);
 
-      const proveedor = await this.proveedores.update({
+      const proveedor = await prisma.proveedores.update({
         where: { id: id, available: true },
         data: updateProveedoreDto,
       });
@@ -110,7 +105,7 @@ export class ProveedoresService extends PrismaClient implements OnModuleInit {
     try {
       await this.findOne(id);
 
-      const proveedor = await this.proveedores.update({
+      const proveedor = await prisma.proveedores.update({
         where: { id: id, available: true },
         data: { available: false },
       });

@@ -1,34 +1,18 @@
-import { HttpStatus, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
-import { CreateDescripcionDto } from './dto/create-descripcion.dto';
+import { Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { UpdateDescripcionDto } from './dto/update-descripcion.dto';
-import { PrismaClient } from '@prisma/client';
 import { ProductsService } from '../products/products.service';
+import { prisma } from '../prisma/prisma-client';
+
 
 @Injectable()
-export class DescripcionService extends PrismaClient implements OnModuleInit{
+export class DescripcionService {
 
   private readonly logger = new Logger('DescripcionService')
 
-  constructor(private readonly productsService: ProductsService) {
-    super();
-  }
-
-  onModuleInit() {
-    this.$connect();
-    this.logger.log('Database connected')
-  }
-
-  //no se usa, create se hace con producto y get all no se usa aun
-  // create(createDescripcionDto: CreateDescripcionDto) {
-  //   return 'This action adds a new descripcion';
-  // }
-
-  // findAll() {
-  //   return `This action returns all descripcion`;
-  // }
+  constructor(private readonly productsService: ProductsService) {}
 
   async findOne(id: number) {
-    const descripcion = await this.descripcion.findFirst({
+    const descripcion = await prisma.descripcion.findFirst({
       where: {id}
     })
     if (!descripcion) {
@@ -50,7 +34,7 @@ export class DescripcionService extends PrismaClient implements OnModuleInit{
       throw new NotFoundException('La descripcion no fue encontrada');
     }
 
-    return this.descripcion.update({
+    return prisma.descripcion.update({
       where:{id},
       data:{
         descripcion,
@@ -67,7 +51,7 @@ export class DescripcionService extends PrismaClient implements OnModuleInit{
       throw new NotFoundException('La descripcion no fue encontrada');
     }
 
-    return this.descripcion.update({
+    return prisma.descripcion.update({
       where:{id},
       data:{
         available: false
@@ -83,7 +67,7 @@ export class DescripcionService extends PrismaClient implements OnModuleInit{
       throw new NotFoundException('La descripcion no fue encontrada');
     }
 
-    return this.descripcion.update({
+    return prisma.descripcion.update({
       where:{id},
       data:{
         available: true

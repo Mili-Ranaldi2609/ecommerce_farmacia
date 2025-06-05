@@ -1,34 +1,26 @@
 import { HttpException, HttpStatus, Inject, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { CreateSolicitudPresupuestoDto } from './dto/create-solicitud-presupuesto.dto';
 import { UpdateSolicitudPresupuestoDto } from './dto/update-solicitud-presupuesto.dto';
-import { PrismaClient } from '@prisma/client';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { EstadoSolicitudDto } from './dto/';
 import { ProductsService } from '../products/products.service';
-import { lastValueFrom, catchError } from 'rxjs';
+import { prisma } from '../prisma/prisma-client';
 
 @Injectable()
-export class SolicitudPresupuestoService extends PrismaClient implements OnModuleInit{
+export class SolicitudPresupuestoService {
   
   private readonly logger = new Logger('SolicitudPresupuestoService')
-  
-  onModuleInit() {
-    this.$connect();
-    this.logger.log('Database connected')
-  }
 
    constructor(
       @Inject() private readonly productosService: ProductsService, 
-    ) {
-      super();
-    }
+    ) {}
   
   //TODO: agredar relacion con usuario que crea la solicitud, token o userId
   async create(createSolicitudPresupuestoDto: CreateSolicitudPresupuestoDto) {
    try {
     const { descripcion, cantidad, productoId, userId } = createSolicitudPresupuestoDto
 
-    const createSolPrep = await this.solicitudPresupuesto.create({
+    const createSolPrep = await prisma.solicitudPresupuesto.create({
       data: {
         descripcion, cantidad,  userId,
         producto:{
@@ -36,7 +28,7 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
         }
       }
     })
-    const estadoSolicitud = await this.historialEstadoSolicitud.create({
+    const estadoSolicitud = await prisma.historialEstadoSolicitud.create({
       data:{
         estado: createSolPrep.estado,
         available: true, 
@@ -54,11 +46,11 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
   async findAll(paginationDto: PaginationDto) {
     const { page = 1, limit = 10 } = paginationDto;
   
-    const totalPages = await this.product.count({ where: { available: true } });
+    const totalPages = await prisma.product.count({ where: { available: true } });
     const lastPage = Math.ceil(totalPages / limit);
 
     try {
-      const solicitudesP = await this.solicitudPresupuesto.findMany({
+      const solicitudesP = await prisma.solicitudPresupuesto.findMany({
         skip: (page - 1) * limit,
         take: limit,
         where: { available: true },
@@ -116,7 +108,7 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
 
   async findOne(id: number) {
     
-      const solicitud = await this.solicitudPresupuesto.findFirst({
+      const solicitud = await prisma.solicitudPresupuesto.findFirst({
         where: { id: id },
         select: {
           id: true, // Campos de SolicitudPresupuesto
@@ -170,7 +162,7 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
   }
 
   async exists(id: number){
-    const solicitud = this.solicitudPresupuesto.findFirst({
+    const solicitud = prisma.solicitudPresupuesto.findFirst({
       where:{id}
     })
     if (!solicitud) {
@@ -192,7 +184,7 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
 
       // Validar que el producto exista antes de conectarlo (opcional)
       if (productoId) {
-        const productoExists = await this.product.findUnique({
+        const productoExists = await prisma.product.findUnique({
           where: { id: productoId },
         });
         if (!productoExists) {
@@ -200,7 +192,7 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
         }
       }
 
-      const updated = await this.solicitudPresupuesto.update({
+      const updated = await prisma.solicitudPresupuesto.update({
         where: {id: id },
         data:{
           descripcion, cantidad, userId,
@@ -215,7 +207,7 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
 
   async remove(id: number) {
     try {
-      const solicitud = await this.solicitudPresupuesto.findUnique({
+      const solicitud = await prisma.solicitudPresupuesto.findUnique({
         where: { id },
         include: { estadoSolicitud: true }, // Asegurarse de incluir la relación con el historial
       });
@@ -224,7 +216,7 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
         throw new Error(`SolicitudPresupuesto con id ${id} no encontrada`);
       }
 
-      const removed = await this.solicitudPresupuesto.update({
+      const removed = await prisma.solicitudPresupuesto.update({
         where:{id},
         data:{
           available: false,
@@ -240,7 +232,7 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
       //   throw new Error(`No se encontró un historial activo para la solicitud con id ${id}`);
       // }
 
-      // await this.historialEstadoSolicitud.update({
+      // await prisma.historialEstadoSolicitud.update({
       //   where: { id: historialActual.id },
       //   data: {
       //     estado: 'CANCELADA', 
@@ -258,7 +250,7 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
 
   async enable(id: number) {
     try {
-      const solicitud = await this.solicitudPresupuesto.findUnique({
+      const solicitud = await prisma.solicitudPresupuesto.findUnique({
         where: { id },
         include: { estadoSolicitud: true }, // Asegurarse de incluir la relación con el historial
       });
@@ -267,7 +259,7 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
         throw new Error(`SolicitudPresupuesto con id ${id} no encontrada`);
       }
 
-      const enabled = await this.solicitudPresupuesto.update({
+      const enabled = await prisma.solicitudPresupuesto.update({
         where:{id},
         data:{
           available: true,
@@ -286,7 +278,7 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
       //   throw new Error (`No se encontró un historial inactivo para la solicitud con id ${id}`);
       // }
 
-      // await this.historialEstadoSolicitud.update({
+      // await prisma.historialEstadoSolicitud.update({
       //   where: { id: historialActualizado.id },
       //   data: {
       //     estado: 'CREADA', // Cambiar el estado a CREADA
@@ -309,7 +301,7 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
     try {
       const {id, estado} = estadoDto
       // Paso 1: Buscar la solicitud por ID
-      const solicitud = await this.solicitudPresupuesto.findUnique({
+      const solicitud = await prisma.solicitudPresupuesto.findUnique({
         where: { id },
         include: { estadoSolicitud: true }, // Incluir todos los historiales relacionados
       });
@@ -340,7 +332,7 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
   
       if (historialActual) {
         // Paso 3: Finalizar el historial actual
-        const historialActualizado = await this.historialEstadoSolicitud.update({
+        const historialActualizado = await prisma.historialEstadoSolicitud.update({
           where: { id: historialActual.id },
           data: {
             available: false,
@@ -350,7 +342,7 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
       }
   
       // Paso 4: Crear un nuevo historial con el nuevo estado
-      const nuevoHistorial = await this.historialEstadoSolicitud.create({
+      const nuevoHistorial = await prisma.historialEstadoSolicitud.create({
         data: {
           estado: estado, // Asignar el nuevo estado
           solicitud: {
@@ -362,7 +354,7 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
       });
   
      // Paso 5: Actualizar el estado de la solicitud
-     const solPrepUpdated = await this.solicitudPresupuesto.update({
+     const solPrepUpdated = await prisma.solicitudPresupuesto.update({
         where: { id },
         data: {
           estado: estado, // Actualizar el estado
@@ -377,7 +369,7 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
   }
   
   async getAllEstados(id: number) {
-    const historial = await this.historialEstadoSolicitud.findMany({
+    const historial = await prisma.historialEstadoSolicitud.findMany({
       where: {solicitudPresupuestoId: id},
       orderBy: {fechaModificacion: 'desc'},
     });
@@ -386,7 +378,7 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
 
   async validateUser(userId: number) {
     try {
-      await this.user.findUnique({
+      await prisma.user.findUnique({
         where: { id: userId },
       });
     } catch (error) {
@@ -396,7 +388,7 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
 
   async getSolicitudesByUser(id: number) {
     await this.validateUser(id);
-    const solicitudes = await this.solicitudPresupuesto.findMany({
+    const solicitudes = await prisma.solicitudPresupuesto.findMany({
       where: {userId: id},
     });
     return solicitudes;
@@ -408,7 +400,7 @@ export class SolicitudPresupuestoService extends PrismaClient implements OnModul
     if(!producto){
       throw new Error('Presupuesto de producto no encontrado, verifique el producto e intente nuevamente')
     }
-    const solicitudes = await this.solicitudPresupuesto.findMany({
+    const solicitudes = await prisma.solicitudPresupuesto.findMany({
     where: {productId: id},
     });
 

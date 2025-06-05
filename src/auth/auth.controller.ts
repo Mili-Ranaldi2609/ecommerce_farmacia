@@ -1,4 +1,16 @@
-import { Body, Controller, Delete, Get, Inject, Param, ParseIntPipe, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Inject,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { LoginUserDto, RegisterUserDto } from './dto';
 import { AuthGuard } from './guards/auth.guard';
 import { AuthGuard as GAuthGuard } from '@nestjs/passport';
@@ -42,7 +54,8 @@ export class AuthController {
           telefono: '555-123-4567',
           userType: 'PACIENTE',
           rol: 'ADMIN',
-          urlImagen: 'https://rybwefx6jybsfaoy.public.blob.vercel-storage.com/WhatsApp%20Image%202025-01-26%20at%2000.36.01_d9c79014-Z8k8T8zEs1NoxTen228mjZ0zlOE6LE.jpg',
+          urlImagen:
+            'https://rybwefx6jybsfaoy.public.blob.vercel-storage.com/WhatsApp%20Image%202025-01-26%20at%2000.36.01_d9c79014-Z8k8T8zEs1NoxTen228mjZ0zlOE6LE.jpg',
         },
       },
     },
@@ -120,7 +133,11 @@ export class AuthController {
       },
     },
   })
-  update(@Param('id', ParseIntPipe) id: number, @Body() updateClientUser: UpdateClientUser) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateClientUser: UpdateClientUser,
+  ) {
+    updateClientUser.id = id; // Ensure the ID is set for the update
     return this.authService.update(updateClientUser);
   }
 
