@@ -10,30 +10,31 @@ import {
   Inject,
   UploadedFile,
   UseInterceptors,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { CreateImagenDto } from './dto/create-imagen.dto';
 import { UpdateImagenDto } from './dto/update-imagen.dto';
-import { RemoveImagenDto } from './dto/remove-imagen.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
 import { ImagenService } from './imagen.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Express } from 'express';
 
+
 @Controller('imagen')
 @ApiTags('imagenes')
 export class ImagenController {
-  constructor(@Inject() private readonly imagenService: ImagenService) {}
+  constructor(@Inject() private readonly imagenService: ImagenService) { }
 
   @UseGuards(AuthGuard)
   @Post()
   @ApiBearerAuth('bearerAuth')
   @ApiBody({
-    description: 'Create a new image',
+    description: 'Crear una nueva imagen',
     type: CreateImagenDto,
     examples: {
       example1: {
-        summary: 'Example request',
+        summary: 'Ejemplo de petición',
         value: {
           tipoImagen: 'Thumbnail',
           descripcion: 'This is a thumbnail image.',
@@ -48,50 +49,39 @@ export class ImagenController {
   }
 
   @UseGuards(AuthGuard)
-  @Get('/:id')
+  @Get('product/:productId')
   @ApiBearerAuth('bearerAuth')
-  async findAllByProduct(@Param('id') id: number) {
-    return this.imagenService.findAllImgByProduct({ idImg: id });
+  async findAllByProduct(@Param('productId', ParseIntPipe) productId: number) {
+    return this.imagenService.findAllImgByProduct({ productoId: productId });
   }
 
   @UseGuards(AuthGuard)
   @Delete(':idImagen')
   @ApiBearerAuth('bearerAuth')
-  @ApiBody({
-    description: 'Remove an image',
-    type: RemoveImagenDto,
-    examples: {
-      example1: {
-        summary: 'Example request',
-        value: {
-          idImagen: 1,
-        },
-      },
-    },
-  })
   async removeImage(
-    @Param('idImagen') idImagen: number,
-    @Body() removeImagenDto: RemoveImagenDto,
+    @Param('idImagen', ParseIntPipe) idImagen: number,  
+    @Body('productId', ParseIntPipe) productId: number 
   ) {
-    return this.imagenService.remove(removeImagenDto);
+    return this.imagenService.remove({ idImagen: idImagen ,productId:productId});
   }
+
 
   @UseGuards(AuthGuard)
   @Get(':id')
   @ApiBearerAuth('bearerAuth')
-  findOne(@Param('id') id: string) {
-    return 0;
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.imagenService.findOne({ idImg: id });
   }
 
   @UseGuards(AuthGuard)
   @Patch(':id')
   @ApiBearerAuth('bearerAuth')
   @ApiBody({
-    description: 'Update an image',
+    description: 'Actualizar una imagen',
     type: UpdateImagenDto,
     examples: {
       example1: {
-        summary: 'Example request',
+        summary: 'Ejemplo de petición',
         value: {
           tipoImagen: 'Updated Thumbnail',
           descripcion: 'This is an updated thumbnail image.',
@@ -100,15 +90,15 @@ export class ImagenController {
       },
     },
   })
-  update(@Param('id') id: string, @Body() updateImagenDto: UpdateImagenDto) {
-    return 0;
+  async update(@Param('id', ParseIntPipe) id: number, @Body() updateImagenDto: UpdateImagenDto) {
+    return this.imagenService.update(id, updateImagenDto);
   }
 
   @UseGuards(AuthGuard)
   @Post('upload')
   @UseInterceptors(FileInterceptor('image'))
   @ApiBearerAuth('bearerAuth')
-  async uploadImage(@UploadedFile() file: Express.Multer.File){
+  async uploadImage(@UploadedFile() file: Express.Multer.File) {
     const url = await this.imagenService.uploadImage(file);
     return { url };
   }

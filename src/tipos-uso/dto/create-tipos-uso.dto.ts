@@ -1,14 +1,19 @@
-import { IsArray, IsInt, IsString } from "class-validator";
+// src/tipos-uso/dto/create-tipos-uso.dto.ts
+import { IsArray, IsInt, IsString, IsNotEmpty } from "class-validator";
 
 export class CreateTiposUsoDto {
-
     @IsInt()
-    public idProducto: number
-  
+    @IsNotEmpty() 
+    public idProducto: number;
+    
     @IsString()
+    @IsNotEmpty() 
+    public nombre: string; 
+    @IsString()
+    @IsNotEmpty() // Asumo que descripcion es requerida al crear
     public descripcion: string;
 
     @IsArray()
-    public tiposDeUso: string[]
-
+    @IsNotEmpty() // Asumo que tiposDeUso es requerido al crear
+    public tiposDeUso: string[];
 }

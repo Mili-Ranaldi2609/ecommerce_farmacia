@@ -50,7 +50,7 @@ export class ComentarioController {
   @Get('/:id')
   @ApiBearerAuth('bearerAuth')
   findAllComentsUserByID(
-    @Param('id') id: number,
+    @Param('userId') id: number,
     @Query() paginationDto: PaginationDto,
   ) {
     return this.comentarioService.findAllByUser({

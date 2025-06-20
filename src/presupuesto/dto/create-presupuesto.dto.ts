@@ -23,6 +23,6 @@ export class CreatePresupuestoDto {
 
     @IsNumber()
     @IsPositive()
-    public solicitudId: number
+    public solicitudPresupuestoId: number
 
 }

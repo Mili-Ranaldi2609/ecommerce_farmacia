@@ -128,25 +128,29 @@ export class ComentarioService {
       throw error;
     }
   }
-
-  async remove(deleteComentDto: DeleteComentDto) {
-    try {
-      const comentario = await prisma.comentario.findUnique({
-        where: { id: deleteComentDto.id, available: true },
-      });
-      if (!comentario) {
-        throw new HttpException('comentario not found', 400);
-      }
-
-      await prisma.comentario.update({
-        where: { id: deleteComentDto.id },
-        data: { available: false },
-      });
-      return comentario;
-    } catch (error) {
-      throw error;
+async remove(deleteComentDto: DeleteComentDto) {
+  try {
+    const comentarioExistente = await prisma.comentario.findUnique({
+      where: { id: deleteComentDto.id, available: true },
+    });
+    if (!comentarioExistente) {
+      throw new HttpException('Comentario no encontrado o ya eliminado', 404);
     }
+
+    const comentarioActualizado = await prisma.comentario.update({
+      where: { id: deleteComentDto.id },
+      data: { available: false }, 
+    });
+
+    return comentarioActualizado;
+  } catch (error) {
+    if (error instanceof HttpException) {
+        throw error;
+    }
+    this.logger.error('Error al eliminar comentario:', error.message);
+    throw new HttpException('Error interno del servidor al eliminar el comentario', 500);
   }
+}
   async FindByRatingComentario(data: FindByRating) {
     try {
 

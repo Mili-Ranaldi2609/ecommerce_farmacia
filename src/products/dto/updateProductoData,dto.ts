@@ -1,5 +1,15 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { IsOptional, IsArray, IsInt, IsBoolean, IsString, IsNumber } from 'class-validator';
+
+import { Type } from 'class-transformer';
+import { IsOptional, IsArray, IsString, IsNumber, ValidateNested } from 'class-validator';
+export class UpdateProductDescriptionDto {
+  @IsOptional()
+  @IsString()
+  descripcion?: string;
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  caracteristicas?: string[];
+}
 
 export class UpdateProductoDataDto {
   @IsOptional()
@@ -17,7 +27,10 @@ export class UpdateProductoDataDto {
   @IsOptional()
   @IsNumber()
   stock?: number;
-
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => UpdateProductDescriptionDto) 
+  descripcion?: UpdateProductDescriptionDto;
   @IsOptional()
   @IsArray()
   categoriasIds?: number[];  // IDs de las categorías a asociar

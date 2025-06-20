@@ -1,8 +1,9 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { IsNumber, IsPositive } from 'class-validator';
-import { CreateImagenDto } from './create-imagen.dto';
 
-export class FindImagenDto extends PartialType(CreateImagenDto) {
+import { IsNumber, IsPositive } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+
+export class FindImagenByIdDto {
+  @ApiProperty({ description: 'ID de la imagen a buscar' })
   @IsNumber()
   @IsPositive()
   idImg: number;

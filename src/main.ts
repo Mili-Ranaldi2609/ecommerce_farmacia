@@ -1,10 +1,9 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
-import basicAuth from 'express-basic-auth';
 import { envs } from './config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-
+import * as expressBasicAuth from 'express-basic-auth';
 async function bootstrap() {
   const logger = new Logger('Full Shop Monolito');
   const app = await NestFactory.create(AppModule);
@@ -18,7 +17,7 @@ async function bootstrap() {
 
   app.use(
     [envs.swaggerPath, `${envs.swaggerPath}-json`],
-    basicAuth({
+    expressBasicAuth({
       users: {
         admin: envs.swaggerPassword
       },

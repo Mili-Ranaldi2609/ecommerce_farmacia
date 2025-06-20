@@ -223,23 +223,8 @@ export class SolicitudPresupuestoService {
           //estado: EstadoSolicitud.CANCELADA
         }
       })
-      
-      // const historialActual = solicitud.estadoSolicitud.find(
-      //   (historial) => historial.available
-      // );
 
-      // if (!historialActual) {
-      //   throw new Error(`No se encontró un historial activo para la solicitud con id ${id}`);
-      // }
-
-      // await prisma.historialEstadoSolicitud.update({
-      //   where: { id: historialActual.id },
-      //   data: {
-      //     estado: 'CANCELADA', 
-      //     fechaModificacion: new Date(),
-      //     available: false 
-      //   },
-      // });
+    
 
       return {msg:'Solicitud removida con exito', removed}
 
@@ -263,29 +248,8 @@ export class SolicitudPresupuestoService {
         where:{id},
         data:{
           available: true,
-          //estado: EstadoSolicitud.CREADA
         }
       })
-      
-      // Encontrar el historial con la fecha de modificación más reciente
-      // const historialActualizado = solicitud.estadoSolicitud.reduce((ultimo, actual) => {
-      //   return new Date(ultimo.fechaModificacion) > new Date(actual.fechaModificacion)
-      //     ? ultimo
-      //     : actual;
-      // });
-
-      // if (!historialActualizado) {
-      //   throw new Error (`No se encontró un historial inactivo para la solicitud con id ${id}`);
-      // }
-
-      // await prisma.historialEstadoSolicitud.update({
-      //   where: { id: historialActualizado.id },
-      //   data: {
-      //     estado: 'CREADA', // Cambiar el estado a CREADA
-      //     fechaModificacion: new Date(),
-      //     available: true 
-      //   },
-      // });
 
       return {
         msg:'Solicitud habilitada con exito, CREADA',
@@ -297,10 +261,9 @@ export class SolicitudPresupuestoService {
     }
   }
 
-  async cambiarEstadoSolicitud(estadoDto: EstadoSolicitudDto  ) {
+  async cambiarEstadoSolicitud(id: number,estadoDto: EstadoSolicitudDto  ) {
     try {
-      const {id, estado} = estadoDto
-      // Paso 1: Buscar la solicitud por ID
+      const {estado} = estadoDto
       const solicitud = await prisma.solicitudPresupuesto.findUnique({
         where: { id },
         include: { estadoSolicitud: true }, // Incluir todos los historiales relacionados
@@ -329,7 +292,6 @@ export class SolicitudPresupuestoService {
       if (!historialActual) {
       }
 
-  
       if (historialActual) {
         // Paso 3: Finalizar el historial actual
         const historialActualizado = await prisma.historialEstadoSolicitud.update({
@@ -352,16 +314,12 @@ export class SolicitudPresupuestoService {
           available: true, // Marcar como activo
         },
       });
-  
-     // Paso 5: Actualizar el estado de la solicitud
-     const solPrepUpdated = await prisma.solicitudPresupuesto.update({
+       const solicitudActualizada = await prisma.solicitudPresupuesto.update({
         where: { id },
         data: {
-          estado: estado, // Actualizar el estado
-          updatedAt: new Date(), // Actualizar la fecha de modificación
+            estado: estado,
         },
-      });
-  
+    });
       return { message: 'Estado de la solicitud y el historial actualizados correctamente' };
     } catch (error) {
       throw new Error('Error al cambiar el estado de la solicitud de presupuesto.');

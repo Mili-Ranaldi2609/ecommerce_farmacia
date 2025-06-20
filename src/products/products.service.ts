@@ -8,10 +8,13 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { UpdateProductoDataDto } from './dto/updateProductoData,dto';
 import { prisma } from '../prisma/prisma-client';
+import { SearchProductDto } from './dto/search-product.dto';
 
 @Injectable()
 export class ProductsService {
   private readonly logger = new Logger('ProductService');
+  
+ 
 
   async create(data: CreateProductDto) {
     const {
@@ -79,74 +82,7 @@ export class ProductsService {
     return producto;
   }
 
-  async findAll(paginationDto: PaginationDto) {
-    const { page = 1, limit = 10} = paginationDto;
-
-    const totalPages = await prisma.product.count({ where: { available: true } });
-    const lastPage = Math.ceil(totalPages / limit);
-
-    // Obtén los datos del producto
-    const products = await prisma.product.findMany({
-      skip: (page - 1) * limit,
-      take: limit,
-      where: { available: true },
-      include: {
-        categorias: {
-          include: {
-            categoria: {
-              select: {
-                id: true,
-                nombreCategoria: true,
-              },
-            },
-          },
-        },
-        tipoProducto: {
-          select: {
-            id: true,
-            nombreTipo: true,
-            tipoPadreId: true,
-          },
-        },
-        descuento: {
-          select: {
-            id: true,
-            precioDescuento: true,
-          },
-        },
-        descripcion: true, // Incluye todo, filtramos manualmente después
-        tiposDeUso: true, // Incluye todo, filtramos manualmente después
-      },
-    });
-
-    // Filtrar `descripcion` y `tiposDeUso` con `available: true`
-    const filteredProducts = products.map((product) => ({
-      ...product,
-      descripcion: product.descripcion?.available
-        ? {
-            id: product.descripcion.id,
-            descripcion: product.descripcion.descripcion,
-            caracteristicas: product.descripcion.caracteristicas,
-          }
-        : null,
-      tiposDeUso: product.tiposDeUso?.available
-        ? {
-            id: product.tiposDeUso.id,
-            descripcion: product.tiposDeUso.descripcion,
-            tiposDeUso: product.tiposDeUso.tiposDeUso,
-          }
-        : null,
-    }));
-
-    return {
-      data: filteredProducts,
-      meta: {
-        total: totalPages,
-        page: page,
-        lastPage: lastPage,
-      },
-    };
-  }
+ 
 
   async findOne(id: number) {
     const product = await prisma.product.findFirst({
@@ -219,27 +155,47 @@ export class ProductsService {
     return product;
   }
 
-  async update(id: number, updateProductDto: UpdateProductoDataDto) {
-    // Desestructuramos el DTO para obtener las categorías (si existen) y los demás datos del producto
-    const { categoriasIds, tipoProductoId, ...data } = updateProductDto;
-    // Primero buscamos el producto a actualizar
+ async update(id: number, updateProductDto: UpdateProductoDataDto) {
+    const { categoriasIds, tipoProductoId, descripcion, ...data } = updateProductDto;
+
     const productToUpdate = await this.findOne(id);
     if (!productToUpdate) {
+      throw new NotFoundException(`Product with ID ${id} not found.`);
     }
 
-    //TODO check if exists tipoProducto y categoria to update producto
-    // Realizamos la actualización del producto
+    let descriptionRelationData = {};
+
+    if (descripcion) { 
+      if (productToUpdate.descripcion) {
+        descriptionRelationData = {
+          descripcion: {
+            update: {
+              descripcion: descripcion.descripcion,
+              caracteristicas: descripcion.caracteristicas,
+            },
+          },
+        };
+      } else {
+        descriptionRelationData = {
+          descripcion: {
+            create: {
+              descripcion: descripcion.descripcion,
+              caracteristicas: descripcion.caracteristicas,
+              available: true, 
+            },
+          },
+        };
+      }
+    }
+
     return prisma.product.update({
-      where: { id }, // Producto a actualizar
+      where: { id },
       data: {
-        ...data,
-        // Manejamos las categorías a través de la tabla intermedia
+        ...data, // nombre, precio, marca, stock
+        ...descriptionRelationData, // Lógica para la relación 'descripcion'
         ...(categoriasIds && {
           categorias: {
-            // Eliminar relaciones anteriores en la tabla intermedia
             deleteMany: {},
-
-            // Crear nuevas relaciones
             create: categoriasIds?.map((categoriaId) => ({
               categoria: {
                 connect: { id: categoriaId },
@@ -270,7 +226,7 @@ export class ProductsService {
     });
   }
 
-  //eliminacion suave
+
   async remove(id: number) {
     await this.findOne(id);
     const product = await prisma.product.update({
@@ -283,152 +239,62 @@ export class ProductsService {
     return product;
   }
 
-  // Get products by category with pagination
-  async getProductByCategory(
-    categoriaId: number,
-    paginationDto: PaginationDto,
-  ) {
-    const { page = 1, limit = 10 } = paginationDto;
 
-    // Total de productos disponibles que pertenecen a la categoría
-    const totalPages = await prisma.product.count({
-      where: {
-        categorias: {
-          some: {
-            categoriaId: categoriaId,
-          },
-        },
-        available: true, // Asegúrate de que solo los productos disponibles sean retornados
-      },
-    });
-
-    const lastPage = Math.ceil(totalPages / limit); // Calcula la última página
-
-    // Obtén los productos con las relaciones y paginación
-    const products = await prisma.product.findMany({
-      skip: (page - 1) * limit, // Saltar los productos anteriores según la página
-      take: limit, // Limitar los productos por el tamaño de la página
-      where: {
-        categorias: {
-          some: {
-            categoriaId: categoriaId,
-          },
-        },
-        available: true, // Asegúrate de que solo los productos disponibles sean retornados
-      },
-      include: {
-        categorias: {
-          include: {
-            categoria: {
-              select: {
-                id: true,
-                nombreCategoria: true,
-              },
-            },
-          },
-        },
-        tipoProducto: {
-          select: {
-            id: true,
-            nombreTipo: true,
-            tipoPadreId: true,
-          },
-        },
-        descuento: {
-          where: {
-            available: true,
-          },
-          select: {
-            id: true,
-            precioDescuento: true,
-          },
-          take: 1, // Solo toma el primer descuento disponible
-        },
-        descripcion: true, // Incluye toda la descripción
-        tiposDeUso: true, // Incluye todos los tipos de uso
-      },
-    });
-
-    // Mapear los resultados al formato esperado
-    const productsDto = products.map((producto) => {
-      const descuento = producto.descuento[0]; // Tomar el primer descuento disponible, si existe
-      return {
-        id: producto.id,
-        nombre: producto.nombre,
-        precio: producto.precio,
-        marca: producto.marca,
-        stock: producto.stock,
-        available: producto.available,
-        categorias: producto.categorias.map((cat) => ({
-          id: cat.categoria.id,
-          nombreCategoria: cat.categoria.nombreCategoria,
-        })),
-        tipoProducto: {
-          id: producto.tipoProducto?.id ?? null,
-          nombreTipo: producto.tipoProducto?.nombreTipo,
-          tipoPadreId: producto.tipoProducto?.tipoPadreId,
-        },
-        descuento: descuento
-          ? {
-              id: descuento.id,
-              precioDescuento: descuento.precioDescuento,
-            }
-          : null,
-        descripcion: producto.descripcion?.available
-          ? {
-              id: producto.descripcion.id,
-              descripcion: producto.descripcion.descripcion,
-              caracteristicas: producto.descripcion.caracteristicas,
-            }
-          : null,
-        tiposDeUso: producto.tiposDeUso?.available
-          ? {
-              id: producto.tiposDeUso.id,
-              descripcion: producto.tiposDeUso.descripcion,
-              tiposDeUso: producto.tiposDeUso.tiposDeUso,
-            }
-          : null,
-      };
-    });
-
-    // Retorna los productos junto con la información de paginación
-    return {
-      products: productsDto,
-      meta: {
-        total: totalPages, // Total de productos disponibles
-        page: page, // Página actual
-        lastPage: lastPage, // Última página
-      },
+  // ¡ESTE ES TU NUEVO Y MEJORADO searchProducts general!
+  async searchProducts(queryDto: SearchProductDto, paginationDto: PaginationDto) {
+    const where: any = {
+      available: true, // Asumimos que por defecto solo se buscan productos disponibles
     };
+
+    // Aplicar filtros basados en los parámetros del queryDto
+    if (queryDto.nombre) {
+      where.nombre = { contains: queryDto.nombre, mode: 'insensitive' };
+    }
+    if (queryDto.marca) {
+      where.marca = { contains: queryDto.marca, mode: 'insensitive' };
+    }
+    if (queryDto.available !== undefined) {
+      where.available = queryDto.available;
+    }
+
+    // Lógica para el rango de precios (del pull request de tu jefe, ahora generalizado)
+    if (queryDto.precioMin !== undefined && queryDto.precioMax !== undefined) {
+      where.precio = {
+        gte: queryDto.precioMin,
+        lte: queryDto.precioMax,
+      };
+    } else if (queryDto.precioMin !== undefined) {
+      where.precio = {
+        gte: queryDto.precioMin,
+      };
+    } else if (queryDto.precioMax !== undefined) {
+      where.precio = {
+        lte: queryDto.precioMax,
+      };
+    }
+
+    // ¡Aquí se utiliza tu función auxiliar para ejecutar la búsqueda!
+    return this.getProductsWithIncludesAndDto(where, paginationDto);
   }
 
-  async buscarProductosPorNombre(nombre: string, paginationDto: PaginationDto) {
-    const { page = 1, limit = 10 } = paginationDto;
 
-    // Total de productos que coinciden con el nombre y están disponibles
-    const totalPages = await prisma.product.count({
-      where: {
-        nombre: {
-          contains: nombre, // Búsqueda parcial (case-insensitive)
-          mode: 'insensitive', // Opción para ignorar mayúsculas y minúsculas
-        },
-        available: true, // Solo productos disponibles
-      },
-    });
+    private async getProductsWithIncludesAndDto(
+    whereClause: any,
+    paginationDto?: PaginationDto, 
+  ) {
+    const page = paginationDto?.page ?? 1;
+    const limit = paginationDto?.limit ?? 10;
+    const skip = paginationDto ? (page - 1) * limit : undefined;
+    const take = paginationDto ? limit : undefined;
 
-    const lastPage = Math.ceil(totalPages / limit); // Calcula la última página
+    const total = await prisma.product.count({ where: whereClause });
+    const lastPage = paginationDto ? Math.ceil(total / (paginationDto.limit ?? 10)) : 1;
+    const currentPage = paginationDto ? paginationDto.page : 1;
 
-    // Obtiene los productos con las relaciones y paginación
-    const productos = await prisma.product.findMany({
-      skip: (page - 1) * limit, // Saltar los productos de las páginas anteriores
-      take: limit, // Limitar los productos por el tamaño de la página
-      where: {
-        nombre: {
-          contains: nombre, // Búsqueda parcial (case-insensitive)
-          mode: 'insensitive', // Opción para ignorar mayúsculas y minúsculas
-        },
-        available: true, // Solo productos disponibles
-      },
+    const products = await prisma.product.findMany({
+      skip: skip,
+      take: take,
+      where: whereClause,
       include: {
         categorias: {
           include: {
@@ -455,16 +321,15 @@ export class ProductsService {
             id: true,
             precioDescuento: true,
           },
-          take: 1, // Solo toma el primer descuento disponible
+          take: 1,
         },
         descripcion: true,
         tiposDeUso: true,
       },
     });
 
-    // Mapea los resultados a un DTO
-    const productosDto = productos.map((producto) => {
-      const descuento = producto.descuento[0]; // Tomar el primer descuento disponible, si existe
+    const productsDto = products.map((producto) => {
+      const descuento = producto.descuento[0];
       return {
         id: producto.id,
         nombre: producto.nombre,
@@ -504,158 +369,42 @@ export class ProductsService {
       };
     });
 
-    // Retorna los productos junto con la información de paginación
     return {
-      productos: productosDto,
+      productos: productsDto,
       meta: {
-        total: totalPages, // Total de productos encontrados
-        page: page, // Página actual
-        lastPage: lastPage, // Última página
+        total: total,
+        page: currentPage,
+        lastPage: lastPage,
       },
     };
   }
+
+  async findAll(paginationDto: PaginationDto) {
+    const whereClause = { available: true };
+    return this.getProductsWithIncludesAndDto(whereClause, paginationDto);
+  }
+
+  async getProductByCategory(
+    categoriaId: number,
+    paginationDto: PaginationDto,
+  ) {
+    const whereClause = {
+      categorias: { some: { categoriaId: categoriaId } },
+      available: true,
+    };
+    return this.getProductsWithIncludesAndDto(whereClause, paginationDto);
+  }
+
 
   async getProductsByTipoProducto(
     tipoProductoId: number,
     paginationDto: PaginationDto,
   ) {
-    const { page = 1, limit = 10 } = paginationDto;
-
-    // Total de productos que coinciden con el tipo de producto y están disponibles
-    const totalPages = await prisma.product.count({
-      where: {
-        tipoProductoId,
-        available: true, // Solo productos disponibles
-      },
-    });
-
-    const lastPage = Math.ceil(totalPages / limit); // Calcula la última página
-
-    // Obtiene los productos con las relaciones y paginación
-    const productos = await prisma.product.findMany({
-      skip: (page - 1) * limit, // Saltar los productos de las páginas anteriores
-      take: limit, // Limitar los productos por el tamaño de la página
-      where: {
-        tipoProductoId,
-        available: true, // Solo productos disponibles
-      },
-      include: {
-        categorias: {
-          select: {
-            categoria: {
-              select: {
-                id: true,
-                nombreCategoria: true,
-              },
-            },
-          },
-        },
-        tipoProducto: {
-          select: {
-            id: true,
-            nombreTipo: true,
-            tipoPadreId: true,
-          },
-        },
-        descuento: {
-          where: {
-            available: true, // Solo descuentos disponibles
-          },
-          select: {
-            id: true,
-            precioDescuento: true,
-          },
-        },
-        descripcion: true,
-        tiposDeUso: true,
-      },
-    });
-
-    // Mapea los resultados a un DTO
-    const productosDto = productos.map((producto) => {
-      const descuento = producto.descuento[0]; // Tomar el primer descuento disponible, si existe
-      return {
-        id: producto.id,
-        nombre: producto.nombre,
-        precio: producto.precio,
-        marca: producto.marca,
-        stock: producto.stock,
-        available: producto.available,
-        categorias: producto.categorias.map((cat) => ({
-          id: cat.categoria.id,
-          nombreCategoria: cat.categoria.nombreCategoria,
-        })),
-        tipoProducto: {
-          id: producto.tipoProducto?.id ?? null,
-          nombreTipo: producto.tipoProducto?.nombreTipo,
-          tipoPadreId: producto.tipoProducto?.tipoPadreId,
-        },
-        descuento: descuento
-          ? {
-              id: descuento.id,
-              precioDescuento: descuento.precioDescuento,
-            }
-          : null,
-        descripcion: producto.descripcion?.available
-          ? {
-              id: producto.descripcion.id,
-              descripcion: producto.descripcion.descripcion,
-              caracteristicas: producto.descripcion.caracteristicas,
-            }
-          : null,
-        tiposDeUso: producto.tiposDeUso?.available
-          ? {
-              id: producto.tiposDeUso.id,
-              descripcion: producto.tiposDeUso.descripcion,
-              tiposDeUso: producto.tiposDeUso.tiposDeUso,
-            }
-          : null,
-      };
-    });
-
-    // Retorna los productos junto con la información de paginación
-    return {
-      productos: productosDto,
-      meta: {
-        total: totalPages, // Total de productos encontrados
-        page: page, // Página actual
-        lastPage: lastPage, // Última página
-      },
+    const whereClause = {
+      tipoProductoId,
+      available: true,
     };
-  }
-
-  //No funciona
-  async searchProducts(query: any) {
-    // Construimos dinámicamente los filtros
-    const where: any = {};
-
-    if (query.marca) {
-      where.marca = { contains: query.marca, mode: 'insensitive' }; // Búsqueda insensible a mayúsculas
-    }
-
-    if (query.nombre) {
-      where.nombre = { contains: query.nombre, mode: 'insensitive' };
-    }
-
-    if (query.precioMin && query.precioMax) {
-      where.precio = {
-        gte: parseFloat(query.precioMin),
-        lte: parseFloat(query.precioMax),
-      };
-    } else if (query.precioMin) {
-      where.precio = { gte: parseFloat(query.precioMin) };
-    } else if (query.precioMax) {
-      where.precio = { lte: parseFloat(query.precioMax) };
-    }
-
-    if (query.available !== undefined) {
-      where.available = query.available === true;
-    }
-
-    // Ejecutamos la consulta con Prisma
-    return prisma.product.findMany({
-      where,
-    });
+    return this.getProductsWithIncludesAndDto(whereClause, paginationDto);
   }
 
   async validateProducts(ids: number[]) {

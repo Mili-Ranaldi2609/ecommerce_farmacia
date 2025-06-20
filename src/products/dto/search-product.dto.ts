@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer';
 import { IsOptional, IsString, IsNumber, IsBoolean } from 'class-validator';
 
 export class SearchProductDto {
@@ -10,10 +11,12 @@ export class SearchProductDto {
   nombre?: any;
 
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   precioMin?: number;
 
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   precioMax?: number;
 

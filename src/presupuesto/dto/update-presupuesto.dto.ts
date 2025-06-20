@@ -3,9 +3,6 @@ import { CreatePresupuestoDto } from './create-presupuesto.dto';
 import { IsNumber, IsOptional, IsPositive, IsString } from "class-validator";
 
 export class UpdatePresupuestoDto extends PartialType(CreatePresupuestoDto) {
-  
-  @IsNumber()
-  id: number;
 
   @IsString()
   @IsOptional()

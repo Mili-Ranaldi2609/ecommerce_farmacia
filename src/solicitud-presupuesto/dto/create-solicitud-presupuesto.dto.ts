@@ -1,3 +1,4 @@
+import { Type } from "class-transformer";
 import { IsNumber, IsPositive, IsString } from "class-validator";
 
 export class CreateSolicitudPresupuestoDto {
@@ -11,6 +12,7 @@ export class CreateSolicitudPresupuestoDto {
 
     @IsNumber()
     @IsPositive()
+     @Type(() => Number)
     public productoId: number;
 
     @IsNumber()

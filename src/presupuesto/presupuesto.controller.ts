@@ -102,7 +102,7 @@ export class PresupuestoController {
     }
 
     const payload = { id, estado };
-    return this.presupuestoService.cambiarEstadoPresupuesto(payload);
+    return this.presupuestoService.cambiarEstadoPresupuesto(id,payload);
   }
 
   @UseGuards(AuthGuard)

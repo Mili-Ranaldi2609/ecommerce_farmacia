@@ -90,8 +90,7 @@ export class SolicitudPresupuestoController {
     @Param('id', ParseIntPipe) id: number,
     @Body() estadoSolicitudDto: EstadoSolicitudDto,
   ) {
-    estadoSolicitudDto.id = id;
-    return this.solicitudService.cambiarEstadoSolicitud(estadoSolicitudDto);
+    return this.solicitudService.cambiarEstadoSolicitud(id,estadoSolicitudDto);
   }
 
   @UseGuards(AuthGuard)

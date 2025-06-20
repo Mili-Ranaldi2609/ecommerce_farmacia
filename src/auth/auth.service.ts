@@ -1,9 +1,7 @@
 import {
   HttpException,
   Injectable,
-  Logger,
-  OnModuleInit,
-  Req,
+  Logger
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { LoginUserDto, RegisterUserDto, UpdateClientUser } from './dto';
@@ -11,12 +9,13 @@ import { JwtService } from '@nestjs/jwt';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { envs } from '../config';
 import { prisma } from '../prisma/prisma-client';
+import { normalizeEmail } from 'src/common/util/normalizeEmail';
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger('AuthService');
 
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(private readonly jwtService: JwtService) { }
 
   async signJWT(payload: JwtPayload) {
     return this.jwtService.sign(payload);
@@ -38,7 +37,10 @@ export class AuthService {
   }
 
   async registerUser(registerUserDto: RegisterUserDto) {
-    const { email, nombre, password } = registerUserDto;
+    const { password, nombre, email } = {
+      ...registerUserDto,
+      email: normalizeEmail(registerUserDto.email)
+    };
 
     const user = await prisma.user.findUnique({
       where: {
@@ -83,8 +85,10 @@ export class AuthService {
   }
 
   async loginUser(loginUserDto: LoginUserDto) {
-    const { email, password } = loginUserDto;
-
+    const { password, email } = {
+      ...loginUserDto,
+      email: normalizeEmail(loginUserDto.email)
+    };
     try {
       const user = await prisma.user.findUnique({
         where: { email, googleBool: false },
@@ -105,33 +109,71 @@ export class AuthService {
         user: rest,
         token: await this.signJWT(rest),
       };
-    } catch (error) {}
+    } catch (error) { }
   }
-
-  async findAll() {
-    try {
-      return await prisma.client.findMany({
-        where: { available: true },
-        include: { user: true },
-      });
-    } catch (error) {
-      throw new HttpException(error.message, 400);
-    }
+async findAll() {
+  try {
+    return await prisma.client.findMany({
+      where: { available: true },
+     
+      select: {
+        id: true,
+        nombre: true,
+        apellido: true,
+        direccion: true,
+        available: true,
+        fechaNacimiento: true,
+        sexo: true,
+        telefono: true,
+        userType: true,
+        rol: true,
+        urlImagen: true,
+        userId: true, 
+        user: { 
+          select: { 
+            id: true,
+            email:true
+          },
+        },
+      },
+    });
+  } catch (error) {
+    throw new HttpException(error.message, 400);
   }
+}
 
   async findOne(id: number) {
-    try {
-      return await prisma.client.findUnique({
-        where: {
-          id: id,
-          available: true,
+  try {
+    return await prisma.client.findUnique({
+      where: {
+        id: id,
+        available: true,
+      },
+      select: {
+        id: true,
+        nombre: true,
+        apellido: true,
+        direccion: true,
+        available: true,
+        fechaNacimiento: true,
+        sexo: true,
+        telefono: true,
+        userType: true,
+        rol: true,
+        urlImagen: true,
+        userId: true, 
+        user: { 
+          select: { 
+            id: true,
+            email:true
+          },
         },
-        include: { user: true },
-      });
-    } catch (error) {
-      throw new HttpException(error.message, 400);
-    }
+      },
+    });
+  } catch (error) {
+    throw new HttpException(error.message, 400);
   }
+}
 
   async update(updateClientDto: UpdateClientUser) {
     try {

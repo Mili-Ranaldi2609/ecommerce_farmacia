@@ -1,40 +1,26 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, ParseIntPipe, UseInterceptors, UseGuards, Inject } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, ParseIntPipe, UseInterceptors, UseGuards, Inject, Logger } from '@nestjs/common';
 import { PaginationDto } from '../common';
 import { CreateProductDto } from './dto/create-product.dto';
-import { UpdateProductDto } from './dto/update-product.dto';
 import { SearchProductDto } from './dto/search-product.dto';
 import { SanitizeInterceptor } from '../common/sanitize.interceptor';
 import { AuthGuard } from '../auth/guards/auth.guard';
-import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ProductsService } from './products.service';
+import { UpdateProductoDataDto } from './dto/updateProductoData,dto';
 
 @Controller('products')
 @ApiTags('Productos')
 export class ProductsController {
+  private readonly logger = new Logger(ProductsController.name);
+
   constructor(@Inject() private readonly productService: ProductsService) {}
-
-  @UseGuards(AuthGuard)
-  @Post('searchProductsQuery')
-  @ApiBearerAuth('bearerAuth')
-  @ApiBody({
-    description: 'Search products by query',
-    type: SearchProductDto,
-    examples: {
-      example1: {
-        summary: 'Example request',
-        value: {
-          nombre: 'Alcohol',
-          marca: 'BrandX',
-          precioMin: 10,
-          precioMax: 100,
-        },
-      },
-    },
-  })
-  async getProductsQuery(@Body() query: SearchProductDto) {
-    return this.productService.searchProducts(query);
+  @Get('search') 
+  findAllProducts(
+    @Query() searchProductQuery: SearchProductDto, 
+    @Query() paginationDto: PaginationDto,
+  ) {
+    return this.productService.searchProducts(searchProductQuery, paginationDto);
   }
-
   @UseGuards(AuthGuard)
   @Post()
   @ApiBearerAuth('bearerAuth')
@@ -96,7 +82,7 @@ export class ProductsController {
   @UseInterceptors(SanitizeInterceptor)
   @ApiBody({
     description: 'Update a product',
-    type: UpdateProductDto,
+    type: UpdateProductoDataDto,
     examples: {
       example1: {
         summary: 'Example request',
@@ -111,7 +97,7 @@ export class ProductsController {
   })
   async updateProduct(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateProductDto: UpdateProductDto,
+    @Body() updateProductDto: UpdateProductoDataDto,
   ) {
     return this.productService.update(id, updateProductDto);
   }
@@ -129,14 +115,6 @@ export class ProductsController {
   async getProductByCategory(@Query() paginationDto: PaginationDto, @Param('id', ParseIntPipe) id: number) {
     return this.productService.getProductByCategory(id, paginationDto);
   }
-
-  @UseGuards(AuthGuard)
-  @Get('searchProductByName/:nombre')
-  @ApiBearerAuth('bearerAuth')
-  async getProductByName(@Query() paginationDto: PaginationDto, @Param('nombre') nombre: string) {
-    return this.productService.buscarProductosPorNombre(nombre, paginationDto);
-  }
-
   @UseGuards(AuthGuard)
   @Get('productByTipoProd/:id')
   @ApiBearerAuth('bearerAuth')

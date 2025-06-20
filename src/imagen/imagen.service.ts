@@ -2,13 +2,10 @@ import {
   BadRequestException,
   Injectable,
   Logger,
-  OnModuleInit,
 } from '@nestjs/common';
 import { CreateImagenDto } from './dto/create-imagen.dto';
 import { UpdateImagenDto } from './dto/update-imagen.dto';
 import { ProductsService } from '../products/products.service';
-import { RemoveImagenDto } from './dto/remove-imagen.dto';
-import { FindImagenDto } from './dto/find-imagen.dto';
 import 'multer';
 import { put } from '@vercel/blob';
 import { prisma } from '../prisma/prisma-client';
@@ -16,7 +13,6 @@ import { prisma } from '../prisma/prisma-client';
 @Injectable()
 export class ImagenService {
   private readonly logger = new Logger('favoritoService');
-
 
   constructor(
     private readonly productsService: ProductsService,
@@ -39,14 +35,14 @@ export class ImagenService {
     }
   }
 
-  async findAllImgByProduct(findImagenDto: FindImagenDto) {
+  async findAllImgByProduct(findOptions: { productoId: number }) {
     try {
-      if (findImagenDto.productoId === undefined) {
-        throw new BadRequestException('Producto ID is required');
+      if (findOptions.productoId === undefined) {
+        throw new BadRequestException('El ID del producto es requerido');
       }
-      await this.productsService.exists(findImagenDto.productoId);
+      await this.productsService.exists(findOptions.productoId);
       const imagenes = await prisma.imagen.findMany({
-        where: { productoId: findImagenDto.productoId, available: true },
+        where: { productoId: findOptions.productoId, available: true },
       });
       return imagenes;
     } catch (error) {
@@ -54,14 +50,13 @@ export class ImagenService {
     }
   }
 
-  async findOne(findImagenDto: FindImagenDto) {
+  async findOne(findOptions: { idImg: number }) {
     try {
-      if (findImagenDto.productoId === undefined) {
-        throw new BadRequestException('Producto ID is required');
+      if (findOptions.idImg === undefined) {
+        throw new BadRequestException('El ID de la imagen es requerido');
       }
-      await this.productsService.exists(findImagenDto.productoId);
       const imagen = await prisma.imagen.findUnique({
-        where: { id: findImagenDto.idImg, available: true },
+        where: { id: findOptions.idImg, available: true },
       });
       return imagen;
     } catch (error) {
@@ -69,45 +64,66 @@ export class ImagenService {
     }
   }
 
-  update(id: number, updateImagenDto: UpdateImagenDto) {
-    return `This action updates a #${id} imagen`;
-  }
-
-  async remove(removeImagenDto: RemoveImagenDto) {
+  async update(id: number, updateImagenDto: UpdateImagenDto) {
     try {
-      const imagen = await this.findOne({ idImg: removeImagenDto.idImagen });
+      const existingImagen = await prisma.imagen.findUnique({ where: { id } });
+
+      if (!existingImagen) {
+        throw new BadRequestException(`No se encontró la imagen con ID ${id}`);
+      }
+
+      if (updateImagenDto.productoId) {
+        await this.productsService.exists(updateImagenDto.productoId);
+      }
+
+      const updatedImagen = await prisma.imagen.update({
+        where: { id },
+        data: {
+          tipoImagen: updateImagenDto.tipoImagen,
+          descripcion: updateImagenDto.descripcion,
+          urlImagen: updateImagenDto.urlImagen,
+          productoId: updateImagenDto.productoId,
+        },
+      });
+      return updatedImagen;
+    } catch (error) {
+      throw error;
+    }
+  }
+ async remove(removeOptions: { idImagen: number; productId: number }) {
+    try {
+      const imagen = await this.findOne({ idImg: removeOptions.idImagen });
       if (!imagen) {
         throw new BadRequestException('La imagen no existe');
       }
-
-      await this.productsService.exists(removeImagenDto.productId);
-
+      await this.productsService.exists(removeOptions.productId);
+      if (imagen.productoId !== removeOptions.productId) {
+        throw new BadRequestException('La imagen no pertenece a este producto.');
+      }
       const imagenEliminada = await prisma.imagen.update({
-        where: { id: removeImagenDto.idImagen },
+        where: { id: removeOptions.idImagen },
         data: { available: false },
       });
-
       return imagenEliminada;
     } catch (error) {
       throw error;
     }
   }
 
+
   async uploadImage(file: Express.Multer.File) {
     if (!file) {
-      throw new BadRequestException('No file uploaded');
+      throw new BadRequestException('No se subió ningún archivo');
     }
 
-    // Validar el tipo de archivo
     const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new BadRequestException('Invalid file type. Only JPEG, PNG, GIF, and WEBP are allowed');
+      throw new BadRequestException('Tipo de archivo inválido. Solo se permiten JPEG, PNG, GIF y WEBP');
     }
 
-    // Validar el tamaño del archivo
     const maxFileSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxFileSize) {
-      throw new BadRequestException('File size exceeds the maximum allowed size of 5MB');
+      throw new BadRequestException('El tamaño del archivo excede el tamaño máximo permitido de 5MB');
     }
 
     try {
@@ -118,7 +134,7 @@ export class ImagenService {
 
       return blob.url;
     } catch (error) {
-      throw new BadRequestException('Failed to upload image');
+      throw new BadRequestException('Fallo al subir la imagen');
     }
   }
 }
