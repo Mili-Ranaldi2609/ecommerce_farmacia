@@ -54,14 +54,14 @@ export class RecetaController {
 
   //encontrar todas las recetas de un solo usuario
   @UseGuards(AuthGuard)
-  @Get(':id')
+  @Get('user/:userId')
   @ApiBearerAuth('bearerAuth')
   findAllByUser(
-    @Param('id', ParseIntPipe) id: number,
+     @Param('userId', ParseIntPipe) userId: number,
     @Query() paginationDto: PaginationDto,
   ) {
     return this.recetaService.findAllByUser({
-      userId: id,
+      userId: userId,
       page: paginationDto.page,
       limit: paginationDto.limit,
     });
@@ -69,7 +69,7 @@ export class RecetaController {
 
   //encontrar una receta
   @UseGuards(AuthGuard)
-  @Get('receta/:idReceta')
+  @Get(':idReceta')
   @ApiBearerAuth('bearerAuth')
   findOne(@Param('idReceta', ParseIntPipe) idReceta: number) {
     return this.recetaService.findOne(idReceta);

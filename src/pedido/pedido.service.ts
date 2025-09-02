@@ -2,6 +2,7 @@ import { HttpException, HttpStatus, Inject, Injectable, Logger, OnModuleInit } f
 import { ProductsService } from '../products/products.service';
 import { CreatePedidoDto, PedidoPaginationDto, UpdatePedidoDto, estadoDto } from './dto';
 import { prisma } from '../prisma/prisma-client';
+import { Estados } from '@prisma/client';
 
 
 @Injectable()
@@ -21,11 +22,11 @@ export class PedidoService {
         throw new HttpException('User not found', HttpStatus.NOT_FOUND);
       }
       //2. Confirmar los id de los productos
-      const ids = createPedidoDto.detalles.map((item) => item.productoId);
+      const ids = createPedidoDto.detallesPedidos.map((item) => item.productoId);
       const productos: any[] = await this.productService.validateProducts(ids);
 
       //3. Proximamente calcular valores del pedido
-      const totalAmount = createPedidoDto.detalles.reduce((acc, detallePedido) => {
+      const totalAmount = createPedidoDto.detallesPedidos.reduce((acc, detallePedido) => {
 
         const price = productos.find(
           (producto) => producto.id === detallePedido.productoId,
@@ -33,7 +34,7 @@ export class PedidoService {
         return acc + (price * detallePedido.cantidad);
       }, 0);
 
-      const totalItems = createPedidoDto.detalles.reduce((acc, detallePedido) => {
+      const totalItems = createPedidoDto.detallesPedidos.reduce((acc, detallePedido) => {
         return acc + detallePedido.cantidad;
       }, 0);
 
@@ -46,7 +47,7 @@ export class PedidoService {
           usuarioId: id,
           detallesPedidos: {
             createMany: {
-              data: createPedidoDto.detalles.map((detallePedido) => ({
+              data: createPedidoDto.detallesPedidos.map((detallePedido) => ({
                 precio: productos.find( producto => producto.id === detallePedido.productoId).precio,
                 productoId: detallePedido.productoId,
                 cantidad: detallePedido.cantidad,
@@ -144,26 +145,54 @@ export class PedidoService {
       }))
     };
   }
+async update(id: number, updatePedidoDto: UpdatePedidoDto) {
+  // 1) Validar que exista
+  await this.findOne(id);
 
-  async update(id: number, updatePedidoDto: UpdatePedidoDto) {
+  // 2) Traer productos y recalcular
+  const ids = updatePedidoDto.detallesPedidos.map(d => d.productoId);
+  const productos: any[] = await this.productService.validateProducts(ids);
 
-    const {id: __, ...data} = updatePedidoDto;
+  const createDetalles = updatePedidoDto.detallesPedidos.map((detalle) => {
+    const p = productos.find(prod => prod.id === detalle.productoId);
+    const precio = p?.precio ?? 0;
+    return {
+      productoId: detalle.productoId,
+      cantidad: detalle.cantidad,
+      precio,
+    };
+  });
 
-    await this.findOne(id);
+  const totalAmount = createDetalles.reduce((acc, d) => acc + d.precio * d.cantidad, 0);
+  const totalItems  = createDetalles.reduce((acc, d) => acc + d.cantidad, 0);
 
-    const pedido = prisma.pedido.update({where: {id}, data: data});
+  // 3) Eliminar detalles previos
+  await prisma.detallePedido.deleteMany({ where: { pedidoId: id } });
 
-    if(updatePedidoDto.estado != null) {
-      const historial = await prisma.historialEstados.create({
-        data: {
-          estado: updatePedidoDto.estado,
-          pedidoId: id,
-        }
-      });
-    }
+  // 4) Actualizar pedido
+  const pedido = await prisma.pedido.update({
+    where: { id },
+    data: {
+      usuarioId: updatePedidoDto.usuarioId,
+      totalAmount,
+      totalItems,
+      detallesPedidos: { createMany: { data: createDetalles } },
+      estado: updatePedidoDto.estado ?? undefined,
+    },
+    include: { detallesPedidos: true },
+  });
 
-    return pedido;
+  // 5) Historial si cambió el estado
+  if (updatePedidoDto.estado != null) {
+    await prisma.historialEstados.create({
+      data: { estado: updatePedidoDto.estado, pedidoId: id },
+    });
   }
+
+  return pedido;
+}
+
+
 
   async remove(id: number) {
     await this.findOne(id);
@@ -175,32 +204,25 @@ export class PedidoService {
 
     return pedido;
   }
+async changeEstado(id: number, estado: Estados) {
+  const pedido = await this.findOne(id);
 
-  async changeEstado(changeEstadoPedido: estadoDto) {
-
-    const {id, estado} = changeEstadoPedido;
-
-    const pedido = await this.findOne(id);
-
-    if(pedido.estado === estado) {
-      return pedido;
-    }
-
-    const historial = await prisma.historialEstados.create({
-      data: {
-        estado: estado,
-        pedidoId: id,
-      }
-    });
-
-    return prisma.pedido.update({
-      where: {id},
-      data: {
-        estado: estado
-      }
-    })
+  if (pedido.estado === estado) {
+    return pedido;
   }
 
+  await prisma.historialEstados.create({
+    data: {
+      estado,
+      pedidoId: id,
+    },
+  });
+
+  return prisma.pedido.update({
+    where: { id },
+    data: { estado },
+  });
+}
   async getAllEstados(id: number) {
     const historial = await prisma.historialEstados.findMany({
       where: {pedidoId: id},

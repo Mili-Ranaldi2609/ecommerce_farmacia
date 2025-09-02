@@ -10,7 +10,7 @@ import { PedidoService } from './pedido.service';
 @Controller('pedido')
 @ApiTags('Pedidos')
 export class PedidoController {
-  constructor(@Inject() private readonly pedidoService: PedidoService) {}
+  constructor(@Inject() private readonly pedidoService: PedidoService) { }
 
   @UseGuards(AuthGuard)
   @Post()
@@ -67,10 +67,13 @@ export class PedidoController {
       },
     },
   })
-  async changeEstado(@Param('id', ParseIntPipe) id: number, @Body() estadoDto: estadoDto) {
-    estadoDto.id = id;
-    return this.pedidoService.changeEstado(estadoDto);
+  async changeEstado(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() estadoDto: estadoDto
+  ) {
+    return this.pedidoService.changeEstado(id, estadoDto.estado);
   }
+
 
   @UseGuards(AuthGuard)
   @Patch('update/:id')

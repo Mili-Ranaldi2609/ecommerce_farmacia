@@ -1,0 +1,41 @@
+# docker-compose.yml
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: fullshop
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d fullshop"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      target: prod
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/fullshop?schema=public
+      JWT_SECRET: cambia_esto_por_un_secreto_largo
+      SWAGGER_PATH: /api/docs
+      SWAGGER_PASSWORD: cambia_esto_tambien
+      GOOGLE_CLIENT_ID: tu_client_id.apps.googleusercontent.com
+      GOOGLE_CLIENT_SECRET: tu_client_secret
+      GOOGLE_CALLBACK_URL: http://localhost:3000/api/auth/google/signin/callback
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

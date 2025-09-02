@@ -74,7 +74,7 @@ export class RecetaService {
 
       const totalPages = Math.ceil(totalRecetas / limit);
       const recetas = await prisma.receta.findMany({
-        where: { available: true },
+        where: { available: true, userId: userId }, // AÑADE ESTA LÍNEA: userId: userId
         skip: (page - 1) * limit,
         take: limit,
         select: {
@@ -84,7 +84,7 @@ export class RecetaService {
           descripcion: true,
         },
       });
-    
+
       return {
         data: recetas,
         meta: {

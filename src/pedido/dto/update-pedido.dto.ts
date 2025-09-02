@@ -1,9 +1,26 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreatePedidoDto } from './create-pedido.dto';
-import { IsNumber, IsPositive } from 'class-validator';
+import { Estados } from "@prisma/client";
+import { Type } from "class-transformer";
+import { IsArray, IsInt, Min, ValidateNested } from "class-validator";
 
-export class UpdatePedidoDto extends PartialType(CreatePedidoDto) {
-  @IsNumber()
-  @IsPositive()
-  id: number;
+class DetalleUpdateDto {
+  @IsInt()
+  productoId: number;
+
+  @IsInt()
+  @Min(1)
+  cantidad: number;
+}
+
+export class UpdatePedidoDto {
+  // Si querés permitir cambiar el dueño del pedido:
+  @IsInt()
+  usuarioId: number;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => DetalleUpdateDto)
+  detallesPedidos: DetalleUpdateDto[]; // REQUERIDO en update
+
+  // Opcional
+  estado?: Estados;
 }

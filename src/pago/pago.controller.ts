@@ -8,7 +8,7 @@ import { PagoService } from './pago.service';
 @Controller('pago')
 @ApiTags('Pagos')
 export class PagoController {
-  constructor(@Inject() private readonly pagoService: PagoService) {}
+  constructor(@Inject() private readonly pagoService: PagoService) { }
 
   @UseGuards(AuthGuard)
   @Post()
@@ -68,7 +68,6 @@ export class PagoController {
   }
 
   @UseGuards(AuthGuard)
-  @Patch()
   @ApiBearerAuth('bearerAuth')
   @ApiBody({
     description: 'Change the payment status',
@@ -83,15 +82,15 @@ export class PagoController {
       },
     },
   })
-  @Redirect('https://google.com.ar/', 301)
-  changeEstadoPago(@Body() changeEstadoPago: estadoPagoDto) {
-    return this.changeEstadoPago(changeEstadoPago);
+  @Patch()
+  changeEstadoPago(@Body() dto: estadoPagoDto) {
+    return this.pagoService.changeEstadoPago(dto); // <— NO te llames a vos misma/o
   }
+
 
   @UseGuards(AuthGuard)
   @Get('mp/:estado')
   @ApiBearerAuth('bearerAuth')
-  @Redirect('https://google.com.ar/', 301)
   changeEstadoPagoGet(@Param('estado') estado: string, @Query('id', ParseIntPipe) id: number) {
     if (estado === 'success') {
       const paraEnviar: estadoPagoDto = { id: id, estado: PagoStatus.PAGADO };

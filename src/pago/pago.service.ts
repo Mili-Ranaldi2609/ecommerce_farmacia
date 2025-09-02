@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { EstadoPagos } from '@prisma/client';
+import { EstadoPagos, Estados } from '@prisma/client';
 import { estadoPagoDto, PagoDto, PagoPaginationDto, } from './dto';
 import { prisma } from '../prisma/prisma-client';
 
@@ -164,79 +164,75 @@ export class PagoService {
         return pago;
     }
 
-    async changeEstadoPago(estadoPagoDto: estadoPagoDto) {
-        const {id, estado} = estadoPagoDto;
+    async changeEstadoPago({ id, estado }: estadoPagoDto) {
+    // 1) Traigo el pago básico para saber su pedidoId y estado actual
+    const pagoActual = await prisma.pago.findFirst({
+      where: { id, available: true },
+    });
 
-        const pago = await this.findOne(id);
-
-        if(pago.estado === estado) {
-            return pago;
-        }
-
-        const historial = await prisma.historialEstadosPago.create({
-            data: {
-                estado: estado,
-                pagoId: id,
-            }
-        });
-
-        if(estado === EstadoPagos.PAGADO) {
-            await await prisma.pedido.update({
-                where: {id},
-                data: {
-                  estado: 'COMPRADO'
-                }
-              });
-        } else if(estado === EstadoPagos.PAGO_RECHAZADO ) {
-            await await prisma.pedido.update({
-                where: {id},
-                data: {
-                  estado: 'PAGO_RECHAZADO'
-                }
-              });
-        } else if(estado === EstadoPagos.PAGO_CANCELADO) {
-            await prisma.pedido.update({
-                where: {id},
-                data: {
-                  estado: 'CANCELADO'
-                }
-              });
-        }
-
-        const pagoNuevo = await prisma.pago.update({
-            where: {id: id},
-            data: {estado: estado},
-        });
-
-        const usuarioX: any = await prisma.user.findFirst({
-            where: {id: pagoNuevo.usuario}
-        });
-
-        if(!usuarioX) {
-            throw new HttpException(`User with id ${pagoNuevo.usuario} not found`, HttpStatus.NOT_FOUND);
-        }
-
-        const pedidoX: any = await prisma.pedido.findFirst({
-            where: {id: pagoNuevo.pedidoId, available: true},
-            include: {detallesPedidos: {
-                select: {
-                    precio: true,
-                    cantidad: true,
-                    productoId: true,
-                }
-            }}
-        })
-
-        if(!pedidoX) {
-            throw new HttpException(`Pedido with id ${pagoNuevo.pedidoId} not found`, HttpStatus.NOT_FOUND);
-        }
-
-        return {
-            ...pagoNuevo,
-            pedido: pedidoX,
-            usuario: usuarioX,
-        }
+    if (!pagoActual) {
+      throw new HttpException(`Pago with id ${id} not found`, HttpStatus.NOT_FOUND);
     }
+
+    if (pagoActual.estado === estado) {
+      // ya está en el estado pedido
+      return this.findOne(id);
+    }
+
+    // 2) Registro historial de estados del pago
+    await prisma.historialEstadosPago.create({
+      data: { estado, pagoId: id },
+    });
+
+    // 3) Si cambió el estado del pago, actualizo el pedido asociado
+    //    (usá un mapeo válido a tu enum de pedido)
+    const pedidoId = pagoActual.pedidoId;
+
+    // Mapeo recomendado: AJUSTALO a tu enum real de Pedido (Estados)
+    const mapPagoToPedido: Partial<Record<EstadoPagos, Estados>> = {
+      [EstadoPagos.PAGADO]: Estados.COMPRADO,
+      [EstadoPagos.PAGO_RECHAZADO]: Estados.PAGO_RECHAZADO, // si tu enum es RECHAZADO, cambialo aquí
+      [EstadoPagos.PAGO_CANCELADO]: Estados.CANCELADO,
+    };
+
+    const nuevoEstadoPedido = mapPagoToPedido[estado];
+
+    if (nuevoEstadoPedido) {
+      await prisma.historialEstados.create({
+        data: { estado: nuevoEstadoPedido, pedidoId },
+      });
+
+      await prisma.pedido.update({
+        where: { id: pedidoId },   // <— clave: usar pedidoId
+        data: { estado: nuevoEstadoPedido },
+      });
+    }
+
+    // 4) Actualizo el estado del pago
+    const pagoNuevo = await prisma.pago.update({
+      where: { id },
+      data: { estado },
+    });
+
+    // 5) Armo la respuesta con usuario y pedido
+    const usuarioX = await prisma.user.findFirst({ where: { id: pagoNuevo.usuario } });
+    if (!usuarioX) {
+      throw new HttpException(`User with id ${pagoNuevo.usuario} not found`, HttpStatus.NOT_FOUND);
+    }
+
+    const pedidoX = await prisma.pedido.findFirst({
+      where: { id: pagoNuevo.pedidoId, available: true },
+      include: {
+        detallesPedidos: { select: { precio: true, cantidad: true, productoId: true } },
+      },
+    });
+
+    if (!pedidoX) {
+      throw new HttpException(`Pedido with id ${pagoNuevo.pedidoId} not found`, HttpStatus.NOT_FOUND);
+    }
+
+    return { ...pagoNuevo, pedido: pedidoX, usuario: usuarioX };
+  }
 
     async getAllEstadosPago(id: number) {
         const historial = await prisma.historialEstadosPago.findMany({

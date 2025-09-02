@@ -5,9 +5,6 @@ import { EstadoPedidoList } from "../enum/estadoPedido.enum";
 
 export class estadoDto {
 
-    @IsNumber()
-    id: number;
-
     @IsEnum(EstadoPedidoList, {
         message: `Valid status are: ${EstadoPedidoList}`
     })

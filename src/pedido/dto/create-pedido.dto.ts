@@ -25,5 +25,5 @@ export class CreatePedidoDto {
     @ArrayMinSize(1)
     @ValidateNested({ each: true })
     @Type( () => DetallePedidoDto)
-    detalles: DetallePedidoDto[]
+    detallesPedidos: DetallePedidoDto[]
 }
